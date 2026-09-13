@@ -1,0 +1,42 @@
+# ── Artefacts de compilation ──────────────────────────────────────────
+# Tout ceci se régénère par `clio-tauri/build-android.sh`. Le dossier Rust
+# à lui seul pèse 2 Go, et Gradle en produit 170 de plus.
+clio-tauri/src-tauri/target/
+clio-tauri/src-tauri/gen/android/build/
+clio-tauri/src-tauri/gen/android/.gradle/
+clio-tauri/src-tauri/gen/android/app/build/
+clio-tauri/src-tauri/gen/android/app/src/main/jniLibs/
+clio-tauri/src-tauri/gen/apple/build/
+node_modules/
+*.apk
+*.aab
+# Dossier web de distribution : sortie de clio-tauri/build-web.sh, régénérée
+# à la demande depuis src/. Le versionner créerait une seconde copie du HTML,
+# qui finirait par diverger de la source.
+web/
+
+# ── Dépendances JavaScript ────────────────────────────────────────────
+# Le projet n'a qu'une dépendance de développement, réinstallable par
+# `npm install`. Les greffons Tauri employés par le HTML sont appelés
+# directement, sans empaqueteur : rien de tout cela n'est nécessaire à
+# l'exécution.
+clio-tauri/package-lock.json
+
+# ── Outillage d'agent et données de session ───────────────────────────
+# Journaux, bases de mémoire et états de session : propres à cette
+# machine, sans valeur pour le projet.
+.claude-flow/
+.swarm/
+.agents/
+.claude/
+
+# ── Secrets ───────────────────────────────────────────────────────────
+.env
+.env.local
+.env.*.local
+*.keystore
+*.jks
+keystore.properties
+
+# ── macOS ─────────────────────────────────────────────────────────────
+.DS_Store

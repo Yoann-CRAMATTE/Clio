@@ -1,0 +1,44 @@
+[package]
+name = "clio"
+version = "1.0.0"
+description = "Clio — l'atelier de l'écrivain"
+authors = ["Yoann CRAMATTE <accueil@europasoft.eu>"]
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+# The `_lib` suffix may seem redundant but it is necessary
+# to make the lib name unique and wouldn't conflict with the bin name.
+# This seems to be only an issue on Windows, see https://github.com/rust-lang/cargo/issues/8519
+name = "clio_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tauri-plugin-dialog = "2.7.3"
+tauri-plugin-fs = "2.5.2"
+
+
+# Les symboles de débogage pèsent ~250 Mo dans la bibliothèque native, ce qui
+# rendait l'APK de test intransférable (limite de 30 Mo à l'envoi, et autant de
+# synchronisation iCloud à chaque essai). On les retire : la compilation reste
+# rapide et non optimisée, l'APK garde sa signature de debug, mais il maigrit.
+# À remettre (debug = true, strip = false) pour déboguer le code Rust lui-même.
+[profile.dev]
+debug = false
+strip = true
+
+# Read the optimization guideline for more details: https://tauri.app/concept/size/#cargo-configuration
+[profile.release]
+codegen-units = 1
+lto = true
+opt-level = 3
+panic = "abort"
+strip = true

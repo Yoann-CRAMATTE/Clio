@@ -1,6 +1,6 @@
 # Le format `.clio` — norme
 
-**Version du format : 2.0** · Établi par EuropaSoft · Dernière révision : 2026-08-30
+**Version du format : 2.0** · Établi par EuropaSoft · Dernière révision : 2026-09-13
 
 Ce document décrit le format de fichier `.clio` de façon autonome. Il suffit à
 écrire un lecteur ou un producteur de `.clio` sans disposer du code de Clio.
@@ -43,27 +43,33 @@ Aucun chiffrement, aucun mot de passe, aucune signature.
 
 L'extension normale est **`.clio`**.
 
-### 3.1 La variante `.clio.zip` — contrainte Android
+### 3.1 La variante `.clio.zip` — contrainte de sélecteur, non de format
 
-Android ne connaît pas l'extension `.clio` dans sa table de types. Un fichier
-ainsi nommé y devient inexploitable :
+Android ne connaît pas l'extension `.clio` dans sa table de types et classe un
+tel fichier en `application/octet-stream`. La conséquence dépend entièrement de
+la façon dont l'application ouvre les fichiers :
 
-- il n'apparaît pas dans les téléchargements de Google Drive ;
-- il s'affiche grisé et non sélectionnable dans les sélecteurs de fichiers ;
-- le symptôme est identique dans une application empaquetée et dans Chrome, ce
-  qui écarte la responsabilité de l'application.
+- **Sélecteur filtré par type** — un `<input type="file">` HTML portant un
+  attribut `accept`, ou un sélecteur configuré avec une liste de types MIME :
+  le `.clio` s'affiche grisé et non sélectionnable, puisque son type déclaré ne
+  figure pas dans la liste. Un filtre vide produit le même effet, Android le
+  lisant comme « aucun type accepté ».
+- **Sélecteur du système sans filtre** — le Storage Access Framework invoqué
+  sans restriction de type : le `.clio` apparaît et s'ouvre normalement.
 
-**Règle.** Sur Android, un producteur écrit `<Titre>.clio.zip`. Sur toute autre
-plateforme, il écrit `<Titre>.clio`.
+**Règle pour les producteurs.** Écrire `<Titre>.clio` sur toutes les
+plateformes. Le suffixe `.clio.zip` reste admis, mais il ne relève pas du
+format : c'est un contournement destiné aux applications dont le sélecteur
+filtre par type. Une application qui n'impose aucun filtre n'en a pas besoin.
 
-**À la lecture, l'extension n'est jamais vérifiée.** Les deux formes sont
-strictement interchangeables : un fichier produit sur une plateforme s'ouvre sur
-toutes les autres.
+**Règle pour les lecteurs.** L'extension n'est **jamais** vérifiée. Les deux
+formes sont strictement interchangeables ; seul le contenu de l'archive fait
+foi, `manifest.json` compris.
 
 > Conséquence pour le travail multi-appareils : un `.clio` déposé sur un espace
-> en ligne depuis un ordinateur restera inexploitable depuis Android tant qu'il
-> n'aura pas reçu le suffixe `.zip`. Le renommer suffit — le contenu est
-> identique.
+> en ligne depuis un ordinateur s'ouvre sur Android dès lors que l'application
+> réceptrice ne filtre pas par type. Avec une application qui filtre, ajouter le
+> suffixe `.zip` au nom suffit — le contenu est identique.
 
 ---
 

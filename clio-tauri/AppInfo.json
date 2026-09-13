@@ -1,0 +1,37 @@
+{
+  "appName": "Clio",
+  "version": "1.0.0",
+  "company": "EuropaSoft",
+  "developer": "Yoann CRAMATTE",
+  "website": "https://www.europasoft.eu",
+  "contact": "accueil@europasoft.eu",
+  "copyright": "© 2026 EuropaSoft — Tous droits réservés",
+  "description": "Clio est un environnement d'écriture conçu pour les auteurs qui pensent par fragments — scènes, idées, dialogues — avant de les assembler en œuvre. Chaque chapitre est un espace de travail vivant, réorganisable à volonté.",
+  "changelog": [
+    {
+      "version": "1.0.0",
+      "date": "2026-09-12",
+      "changes": [
+        "Correction : l'application ne répondait à aucun clic sur Android — la CSP bloquait tout le JavaScript, qui est entièrement en ligne dans la page",
+        "Ouverture d'un .clio par le sélecteur de fichiers du système, sans filtre d'extension : Android ne connaît pas le type .clio et grisait les fichiers",
+        "Enregistrement et exports rétablis : la couche Capacitor, absente du portage, est remplacée par les greffons Tauri dialog et fs",
+        "Plus de dossier de sauvegarde à mémoriser : le système demande où écrire à chaque première sauvegarde",
+        "Boutons « Ouvrir un .clio » et « Nouveau Livre » alignés sur la même hauteur",
+        "Zones sûres respectées : la barre d'état du système ne recouvre plus la barre de titre",
+        "Blocs Personnages et Lieux : titre, indication et bouton d'ajout restent visibles, la liste défile en dessous sans dépasser la moitié de l'écran",
+        "Résumé du livre modifiable depuis la fiche, et plus seulement à la création",
+        "Fenêtre À propos allégée : mention de la création avec Claude, retrait des relevés techniques devenus obsolètes"
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-09-10",
+      "changes": [
+        "Portage Android sur Tauri v2, en remplacement du paquet Capacitor",
+        "JSZip embarqué dans l'application : l'ouverture et la sauvegarde .clio fonctionnent hors ligne",
+        "Polices Playfair Display, Crimson Pro et IM Fell English embarquées (latin et latin-ext)",
+        "Ouverture d'un fichier .clio par partage et par association de type dans Android"
+      ]
+    }
+  ]
+}
