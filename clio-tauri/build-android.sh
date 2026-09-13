@@ -33,11 +33,26 @@ trap 'rm -f "$REPERE"' EXIT
 (cd src-tauri/gen/android && ./gradlew clean >/dev/null 2>&1) || true
 
 if [[ "${1:-}" == "--release" ]]; then
-  echo "→ Build de release (signature requise, voir keystore.properties)"
+  # Google Play demande un AAB signé. Sans magasin de clés, Gradle produit un
+  # bundle non signé que le Store refusera : autant s'arrêter tout de suite,
+  # avec l'indication de ce qui manque.
+  if [[ ! -f src-tauri/gen/android/keystore.properties ]]; then
+    echo "✗ keystore.properties introuvable dans src-tauri/gen/android/" >&2
+    echo "  Sans lui, le bundle sortirait non signé et Google Play le refuserait." >&2
+    echo "  Marche à suivre : docs/PLATEFORMES.md, section « Publier sur le Play Store »." >&2
+    exit 1
+  fi
+  echo "→ Build de release, toutes architectures"
   npm run tauri android build
 else
   echo "→ Build de debug, cible aarch64"
   npm run tauri android build -- --debug --target aarch64
+fi
+
+if [[ "${1:-}" == "--release" ]]; then
+  echo
+  echo "Bundle pour Google Play :"
+  find src-tauri/gen/android/app/build/outputs -name "*.aab" -exec ls -lh {} \;
 fi
 
 echo

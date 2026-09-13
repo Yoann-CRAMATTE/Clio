@@ -1,3 +1,4 @@
+import java.io.FileInputStream
 import java.util.Properties
 
 plugins {
@@ -13,6 +14,20 @@ val tauriProperties = Properties().apply {
     }
 }
 
+/* Signature de distribution.
+ *
+ * Les identifiants vivent dans keystore.properties, à la racine du dossier
+ * android, et ce fichier n'est jamais versionné : il contient les mots de
+ * passe du magasin de clés. Voir docs/PLATEFORMES.md pour le créer.
+ *
+ * Quand le fichier est absent — cas d'une compilation de débogage, ou d'un
+ * poste qui n'a pas la clé — la configuration reste vide et seule la
+ * compilation de release échoue. Le reste continue de fonctionner. */
+val fichierClés = rootProject.file("keystore.properties")
+val clés = Properties().apply {
+    if (fichierClés.exists()) FileInputStream(fichierClés).use { load(it) }
+}
+
 android {
     compileSdk = 36
     namespace = "eu.europasoft.clio"
@@ -23,6 +38,16 @@ android {
         targetSdk = 36
         versionCode = tauriProperties.getProperty("tauri.android.versionCode", "1").toInt()
         versionName = tauriProperties.getProperty("tauri.android.versionName", "1.0")
+    }
+    signingConfigs {
+        create("release") {
+            if (fichierClés.exists()) {
+                keyAlias      = clés["keyAlias"] as String
+                keyPassword   = clés["keyPassword"] as String
+                storeFile     = file(clés["storeFile"] as String)
+                storePassword = clés["storePassword"] as String
+            }
+        }
     }
     buildTypes {
         getByName("debug") {
@@ -37,6 +62,7 @@ android {
             }
         }
         getByName("release") {
+            if (fichierClés.exists()) signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
             proguardFiles(
                 *fileTree(".") { include("**/*.pro") }

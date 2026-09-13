@@ -123,6 +123,55 @@ Ni Rust ni le JDK ne sont dans le `PATH` par défaut sur cette machine.
 `build-android.sh` exporte les trois nécessaires : `JAVA_HOME` (openjdk@17 de
 Homebrew), `ANDROID_HOME` et `NDK_HOME`. Sans elles, Gradle et Cargo échouent.
 
+### Publier sur le Play Store
+
+Google Play demande un **AAB** signé, pas un APK. La configuration de signature
+est en place dans `app/build.gradle.kts` ; il manque la clé, que seul le
+propriétaire du compte doit créer et détenir.
+
+**1. Créer le magasin de clés** — une fois pour toutes, hors du dépôt :
+
+```bash
+keytool -genkeypair -v \
+  -keystore ~/cles/clio-release.jks \
+  -keyalg RSA -keysize 4096 -validity 10000 \
+  -alias clio
+```
+
+Conserver ce fichier et son mot de passe **hors du dépôt et sauvegardés** :
+perdre la clé interdit toute mise à jour de l'application publiée, sans recours
+autre que la republier sous une autre identité.
+
+**2. Déclarer la clé** dans `src-tauri/gen/android/keystore.properties` — ce
+fichier est exclu du dépôt par `.gitignore`, il ne doit jamais y entrer :
+
+```properties
+storeFile=/Users/<vous>/cles/clio-release.jks
+storePassword=…
+keyAlias=clio
+keyPassword=…
+```
+
+**3. Produire le bundle** :
+
+```bash
+cd clio-tauri
+./build-android.sh --release
+```
+
+L'AAB sort dans `src-tauri/gen/android/app/build/outputs/bundle/universalRelease/`.
+
+**Numéro de version.** `versionCode` et `versionName` viennent de la version
+déclarée dans `tauri.conf.json` : `1.0.0` donne le code `1000000`. Google Play
+refuse un dépôt dont le `versionCode` n'est pas strictement supérieur au
+précédent — incrémenter la version dans `tauri.conf.json` et dans
+`AppInfo.json` avant chaque publication.
+
+**Attention aux fichiers générés.** `gen/android/` est produit par Tauri. La
+configuration de signature, les `intent-filter` et les ajustements du manifeste
+y vivent : un `tauri android init` les écraserait. Les vérifier après toute
+régénération.
+
 ### Portée des cibles
 
 Depuis le Mac : Android, iOS et macOS. Windows et Linux exigent leur propre
