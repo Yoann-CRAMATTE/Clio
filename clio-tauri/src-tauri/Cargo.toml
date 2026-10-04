@@ -1,6 +1,6 @@
 [package]
 name = "clio"
-version = "1.0.0"
+version = "1.0.3"
 description = "Clio — l'atelier de l'écrivain"
 authors = ["Yoann CRAMATTE <accueil@europasoft.eu>"]
 edition = "2021"

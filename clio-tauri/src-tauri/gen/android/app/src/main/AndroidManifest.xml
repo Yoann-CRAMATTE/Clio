@@ -32,19 +32,13 @@
 
             <!--
               Android ne connaît pas l'extension .clio : sa table système ne
-              l'associe à aucun type. Un .clio arrive donc soit partagé par une
-              autre application (voie principale), soit ouvert explicitement.
-              Les deux filtres ci-dessous couvrent ces deux chemins.
+              l'associe à aucun type. Le filtre ci-dessous fait apparaître Clio
+              dans « Ouvrir avec » pour un .clio ouvert explicitement.
+              Pas de filtre SEND (« Partager → Clio ») : la réception d'un
+              fichier n'est pas encore portée sous Tauri (voir
+              docs/PLATEFORMES.md, « Capacitor n'existe plus »). Le déclarer
+              ferait proposer Clio comme cible de partage pour n'en rien faire.
             -->
-
-            <!-- Partager → Clio -->
-            <intent-filter>
-                <action android:name="android.intent.action.SEND" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <data android:mimeType="application/zip" />
-                <data android:mimeType="application/x-zip-compressed" />
-                <data android:mimeType="application/octet-stream" />
-            </intent-filter>
 
             <!-- Ouvrir avec → Clio -->
             <intent-filter>

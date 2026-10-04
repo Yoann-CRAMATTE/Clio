@@ -153,6 +153,7 @@ n'a aucun sens dans un fichier).
   "desc": "",                                 // résumé
   "goal": 80000,                              // objectif de mots, défaut 80000
   "locked": false,                            // œuvre achevée, en lecture seule
+  "status": "encours",                        // brouillon · encours · termine, cf. §7.1
   "bookFormat": "roman",                      // format de pagination, défaut "roman"
   "createdAt": "2026-04-27T10:00:00.000Z",
   "updatedAt": "2026-08-30T09:41:12.512Z",
@@ -177,6 +178,7 @@ n'a aucun sens dans un fichier).
 | `desc` | chaîne | `""` | |
 | `goal` | entier | `80000` | Objectif de mots |
 | `locked` | booléen | `false` | Un livre verrouillé ne peut être modifié par aucun chemin |
+| `status` | chaîne | `"encours"` | Rayon de la bibliothèque : `"brouillon"`, `"encours"` ou `"termine"`. Facultatif (absent avant Clio 1.0.3). Le verrou fait foi : `locked: true` vaut `"termine"` ; `"termine"` sans verrou est lu `"encours"`. Toute autre valeur est ignorée |
 | `bookFormat` | chaîne | `"roman"` | Détermine la pagination estimée |
 | `createdAt` | ISO 8601 | — | |
 | `updatedAt` | ISO 8601 | — | Rafraîchi à chaque écriture |
@@ -319,6 +321,13 @@ Un lecteur conforme applique, dans cet ordre :
    telle quelle**, référence morte, sans erreur ni message.
 7. **Rétablir les invariants** : ≥ 1 chapitre, ≥ 1 scène par chapitre, ≥ 1 bloc
    par scène. Compléter par des éléments vides plutôt que rejeter.
+8. **Tenir le contenu pour non fiable.** Un `.clio` peut avoir été écrit à la
+   main. Ramener chaque champ au type de §7 (un texte qui n'est pas une chaîne
+   devient vide) ; remplacer un `id` qui ne s'écrit pas en `[A-Za-z0-9_-]` ;
+   n'accepter pour `data` qu'une URL `data:image/…;base64,` et pour `mime`
+   qu'un `image/…` ; n'accepter pour `file` qu'un nom simple, sans `/` ni `\`.
+   Et toujours échapper le texte affiché. Clio applique ces règles sans
+   rejeter l'archive : un fichier légitime n'est pas modifié.
 
 ---
 

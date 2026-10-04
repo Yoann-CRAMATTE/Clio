@@ -1,0 +1,66 @@
+{
+  "appName": "Clio",
+  "version": "1.0.3",
+  "company": "EuropaSoft",
+  "developer": "Yoann CRAMATTE",
+  "website": "https://www.europasoft.eu",
+  "contact": "accueil@europasoft.eu",
+  "copyright": "© 2026 EuropaSoft — Tous droits réservés",
+  "description": "Clio est un environnement d'écriture conçu pour les auteurs qui pensent par fragments — scènes, idées, dialogues — avant de les assembler en œuvre. Chaque chapitre est un espace de travail vivant, réorganisable à volonté.",
+  "changelog": [
+    {
+      "version": "1.0.3",
+      "date": "2026-10-04",
+      "changes": [
+        "Glisser-déposer au doigt : les poignées des blocs, des scènes, des notes et des chapitres réagissent enfin sur tablette et téléphone (elles ne fonctionnaient qu'à la souris)",
+        "Défilement automatique quand on glisse un élément près du bord de l'écran",
+        "Correction : un bloc déposé sur un bloc d'une autre scène emportait aussi son voisin",
+        "Correction : après une pause sur un chapitre (qui l'ouvre), le bloc glissé n'était plus déplacé, ou un autre l'était à sa place",
+        "Zones sûres : la barre d'état de la tablette ne recouvre plus l'en-tête de la corbeille, du panneau d'écriture suivie ni du mode lecture ; la recherche s'ouvre sous la barre du haut",
+        "Nouveau : trois statuts de livre — Brouillon, En cours, Terminé — choisis d'un geste sur la carte, et trois rayons dans la bibliothèque ; un nouveau livre commence en brouillon",
+        "Sous Android, le nom du fichier .clio s'affiche lisiblement sur la carte (et non plus « primary%3ADocuments%2F… »)"
+      ]
+    },
+    {
+      "version": "1.0.2",
+      "date": "2026-10-04",
+      "changes": [
+        "Identité de l'application lue dans AppInfo.json au démarrage, au lieu d'être recopiée dans la page : fenêtre À propos et bas d'écran suivent ce fichier",
+        "Version unique : tauri.conf.json lit AppInfo.json, package.json et Cargo.toml sont alignés par sync-version.sh",
+        "Journal des versions renuméroté : les deux entrées « 1.0.0 » deviennent 1.0.0 et 1.0.1, pour un versionCode Android strictement croissant",
+        "Android : Clio ne se propose plus comme cible de « Partager », la réception d'un fichier partagé n'étant pas encore portée",
+        "Livres et corbeille enregistrés dans IndexedDB au lieu de localStorage : fini le quota de 5 à 10 Mo qui bloquait la sauvegarde dès quelques images",
+        "Migration automatique au premier lancement, vérifiée par relecture ; l'ancienne copie localStorage est conservée en filet de sécurité",
+        "Sauvegardes sérialisées (jamais deux écritures croisées) et écriture immédiate quand l'application passe en arrière-plan",
+        "Sécurité : un .clio piégé ne peut plus injecter de code — champs ramenés à leur type à l'import, images limitées aux données d'image, identifiants, adresses d'image et pages d'index échappés à l'affichage",
+        "Tests automatisés (npm test) : aller-retour du format .clio et stockage des livres, sur le code réel de la page",
+        "Format .clio : une archive sans chapitre, scène ou bloc est complétée à l'ouverture (elle faisait planter l'ouverture du livre) ; une image relue ne garde plus sa référence file ; l'export d'un livre piégé stocké avant 1.0.2 ne peut plus produire de chemin ../"
+      ]
+    },
+    {
+      "version": "1.0.1",
+      "date": "2026-09-12",
+      "changes": [
+        "Correction : l'application ne répondait à aucun clic sur Android — la CSP bloquait tout le JavaScript, qui est entièrement en ligne dans la page",
+        "Ouverture d'un .clio par le sélecteur de fichiers du système, sans filtre d'extension : Android ne connaît pas le type .clio et grisait les fichiers",
+        "Enregistrement et exports rétablis : la couche Capacitor, absente du portage, est remplacée par les greffons Tauri dialog et fs",
+        "Plus de dossier de sauvegarde à mémoriser : le système demande où écrire à chaque première sauvegarde",
+        "Boutons « Ouvrir un .clio » et « Nouveau Livre » alignés sur la même hauteur",
+        "Zones sûres respectées : la barre d'état du système ne recouvre plus la barre de titre",
+        "Blocs Personnages et Lieux : titre, indication et bouton d'ajout restent visibles, la liste défile en dessous sans dépasser la moitié de l'écran",
+        "Résumé du livre modifiable depuis la fiche, et plus seulement à la création",
+        "Fenêtre À propos allégée : mention de la création avec Claude, retrait des relevés techniques devenus obsolètes"
+      ]
+    },
+    {
+      "version": "1.0.0",
+      "date": "2026-09-10",
+      "changes": [
+        "Portage Android sur Tauri v2, en remplacement du paquet Capacitor",
+        "JSZip embarqué dans l'application : l'ouverture et la sauvegarde .clio fonctionnent hors ligne",
+        "Polices Playfair Display, Crimson Pro et IM Fell English embarquées (latin et latin-ext)",
+        "Ouverture d'un fichier .clio par partage et par association de type dans Android"
+      ]
+    }
+  ]
+}

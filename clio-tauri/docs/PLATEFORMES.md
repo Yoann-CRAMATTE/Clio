@@ -34,6 +34,8 @@ Pour cloisonner le réseau, ne pas compter sur la CSP. La voie serait de retirer
 `android.permission.INTERNET` du manifeste — mais Tauri sert ses assets via
 `http://tauri.localhost`, et rien ne garantit que le WebView puisse émettre ces
 requêtes sans la permission. À ne tenter qu'avec un appareil sous la main.
+En l'état, la permission est **conservée** : aucun cloisonnement réseau n'est
+en place, seule l'absence de tout appel réseau dans le code en tient lieu.
 
 ### Aucune API fichier du navigateur ne fonctionne
 
@@ -93,9 +95,10 @@ qu'en se fiant à l'inspection visuelle d'une seule taille.
 Tout le code mobile d'origine passait par `window.Capacitor`. Sous Tauri cet
 objet est absent, donc `surMobileNatif()` renvoie `false` et Clio se croit sur
 un ordinateur. La fonction `reclamerFichierRecu()` attend en outre un greffon
-natif maison (`ClioOuvrir`) qui n'existe pas dans ce portage : les
-`intent-filter` du manifeste font apparaître Clio dans « Partager » et « Ouvrir
-avec », mais **le fichier reçu n'est pas encore chargé**. Reste à porter.
+natif maison (`ClioOuvrir`) qui n'existe pas dans ce portage : l'`intent-filter`
+VIEW du manifeste fait apparaître Clio dans « Ouvrir avec », mais **le fichier
+reçu n'est pas encore chargé**. Reste à porter. Le filtre SEND (« Partager →
+Clio ») a été retiré en attendant : le rétablir en même temps que la réception.
 
 ---
 
@@ -160,12 +163,44 @@ cd clio-tauri
 ```
 
 L'AAB sort dans `src-tauri/gen/android/app/build/outputs/bundle/universalRelease/`.
+Le script en range une copie, avec l'APK et les notes tirées du changelog, dans
+`~/Documents/EuropaSoft/06_PROJETS_INTERNE/Clio/Versions/<version>/` : une archive
+où chaque version publiée garde son sous-dossier. La variable `CLIO_VERSIONS`
+change cet emplacement.
 
 **Numéro de version.** `versionCode` et `versionName` viennent de la version
-déclarée dans `tauri.conf.json` : `1.0.0` donne le code `1000000`. Google Play
-refuse un dépôt dont le `versionCode` n'est pas strictement supérieur au
-précédent — incrémenter la version dans `tauri.conf.json` et dans
-`AppInfo.json` avant chaque publication.
+lue par `tauri.conf.json` : `x.y.z` donne le code `x·1000000 + y·1000 + z`
+(`1.0.2` → `1000002`). Google Play refuse un dépôt dont le `versionCode` n'est
+pas strictement supérieur au précédent — incrémenter la version dans
+`src/AppInfo.json` avant chaque publication, et jamais réutiliser un numéro
+déjà présent dans son journal.
+
+### Une seule source pour la version : `src/AppInfo.json`
+
+L'identité de l'application (nom, version, entreprise, contact, copyright,
+description, journal) n'est écrite qu'à un endroit : `src/AppInfo.json`. Il vit
+dans `src/` parce que la page le lit au démarrage (`fetch('AppInfo.json')`,
+qui remplit `APP_CONFIG`) — même chemin sur le web et sous Tauri, et le service
+worker le met en cache avec les fichiers essentiels pour le hors-ligne. En
+`file://`, le fetch est refusé : la page garde alors un repli minimal (nom,
+entreprise, version vide).
+
+Les fichiers de fabrication suivent :
+
+| Fichier | Comment il suit |
+|---|---|
+| `src-tauri/tauri.conf.json` | `"version": "../src/AppInfo.json"` — Tauri lit le champ `version` de ce JSON lui-même (chemin relatif à `src-tauri/`). |
+| `package.json` | réécrit par `sync-version.sh` |
+| `src-tauri/Cargo.toml` | réécrit par `sync-version.sh` (version du paquet seulement) |
+
+`sync-version.sh` est appelé par `build-web.sh` et `build-android.sh` ; après
+un changement de version hors de ces scripts (un `cargo` ou `tauri dev` direct),
+le lancer à la main. La documentation de Tauri parle d'un chemin vers un
+`package.json`, mais le code (`tauri-utils`, `PackageVersion`) accepte tout
+fichier JSON portant un champ `version` : vérifié avec `cargo check` en
+tauri-utils 2.9.3. Si une version future de Tauri se limitait à
+`package.json`, pointer sur `"../package.json"`, que `sync-version.sh` tient
+déjà à jour.
 
 **Attention aux fichiers générés.** `gen/android/` est produit par Tauri. La
 configuration de signature, les `intent-filter` et les ajustements du manifeste
@@ -182,9 +217,33 @@ machine ou un CI.
 ## Web
 
 Depuis le retrait des CDN, `index.html` n'est plus autonome. Il référence
-`fonts.css`, `fonts/` (22 fichiers woff2) et `vendor/jszip.min.js`. Pour la
+`fonts.css`, `fonts/` (22 fichiers woff2), `vendor/jszip.min.js` et `AppInfo.json`. Pour la
 version en ligne, déployer le dossier `src/` entier.
 
 Sur le web, `SOUS_TAURI` vaut `false` et le comportement d'origine s'applique :
 API File System Access quand le navigateur la propose, `<input type="file">`
 sinon. Vérifier les deux chemins après chaque modification.
+
+### Stockage local : IndexedDB, repli localStorage
+
+Les livres et la corbeille sont dans la base IndexedDB `clio-livres`
+(magasin `donnees`, clés `clio-books` et `clio-trash`, même texte JSON
+qu'autrefois). IndexedDB existe partout où Clio tourne — navigateurs,
+WKWebView (macOS, iOS), WebView2 (Windows), WebView Android — et n'a pas le
+plafond de 5 à 10 Mo de `localStorage`. Les petits réglages restent dans
+`localStorage`.
+
+- **Migration** : au premier lancement, chaque ancienne clé `localStorage` est
+  recopiée, relue et comparée ; `meta/migration` n'est posé qu'ensuite, avec le
+  témoin `localStorage['clio-stockage'] = 'indexeddb'`. En cas d'échec, la
+  session reste sur `localStorage` et la migration est retentée.
+- **Anciennes clés conservées** en filet de sécurité, figées au jour de la
+  migration. À supprimer au plus tôt en 1.1, si `meta/migration.date` a plus
+  de 60 jours.
+- **Repli** : IndexedDB absente ou muette plus de 5 s → `localStorage`. Si le
+  témoin dit que la migration avait eu lieu, l'auteur est prévenu qu'il voit
+  la copie figée.
+- **Origine** : comme `localStorage`, la base est cloisonnée par origine
+  (`http://tauri.localhost`, `tauri://localhost`, l'adresse web, `file://`).
+  Changer d'origine — par exemple le schéma Tauri — revient à partir d'une
+  bibliothèque vide.

@@ -37,6 +37,8 @@ clio-tauri/package-lock.json
 *.keystore
 *.jks
 keystore.properties
+# Fichiers de secours d'éditeur (nano a laissé un .save en clair lors d'un plantage)
+*.save
 
 # ── macOS ─────────────────────────────────────────────────────────────
 .DS_Store

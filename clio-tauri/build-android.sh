@@ -8,8 +8,11 @@
 # 'unsafe-inline' dès qu'un nonce est présent. Comme tout le JavaScript de Clio
 # est inline (3 blocs <script> et 105 attributs onclick), la moindre CSP rend
 # l'application entièrement inerte : l'interface s'affiche, rien ne réagit.
-# Le cloisonnement réseau passe donc par l'absence de la permission INTERNET
-# dans AndroidManifest.xml — garantie par le système, pas par le moteur de rendu.
+# Aucun cloisonnement réseau n'est donc en place : le manifeste garde la
+# permission INTERNET, faute de pouvoir garantir que le WebView charge encore
+# http://tauri.localhost sans elle (voir le commentaire d'AndroidManifest.xml).
+# Ce qui tient lieu de garde-fou : Clio n'émet aucune requête, JSZip et les
+# polices sont embarqués.
 set -euo pipefail
 
 cd "$(dirname "$0")"
@@ -21,6 +24,10 @@ cd "$(dirname "$0")"
 export JAVA_HOME="$(brew --prefix openjdk@17)/libexec/openjdk.jdk/Contents/Home"
 export ANDROID_HOME="$HOME/Library/Android/sdk"
 export NDK_HOME="$ANDROID_HOME/ndk/28.2.13676358"
+
+# package.json et Cargo.toml suivent src/AppInfo.json ; tauri.conf.json le lit
+# directement. Le versionCode Android en découle : x.y.z → x·1000000 + y·1000 + z.
+./sync-version.sh
 
 # Repère temporel : tout APK antérieur à ce point vient d'un build précédent.
 REPERE="$(mktemp)"
@@ -59,28 +66,48 @@ echo
 echo "APK produits :"
 find src-tauri/gen/android/app/build/outputs -name "*.apk" -exec ls -lh {} \;
 
-# Dépôt de transfert vers tablette et téléphone : le dossier Developer n'est pas
-# synchronisé, celui-ci l'est. C'est par là que passent les APK.
-DEPOT="$HOME/Documents/APK"
-VERSION="$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' AppInfo.json | head -1)"
+# Dossier des versions : une archive, pas un banc d'essai. Chaque version garde
+# son sous-dossier (AAB pour Google Play, APK pour une installation directe,
+# notes tirées du changelog), pour retrouver exactement ce qui a été publié.
+# Il vit dans le dossier EuropaSoft du projet ; CLIO_VERSIONS permet d'en changer.
+DEPOT_RACINE="${CLIO_VERSIONS:-$HOME/Documents/EuropaSoft/06_PROJETS_INTERNE/Clio/Versions}"
+VERSION="$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' src/AppInfo.json | head -1)"
 SUFFIXE=$([[ "${1:-}" == "--release" ]] && echo "release" || echo "debug")
-
+DEPOT="$DEPOT_RACINE/$VERSION"
 mkdir -p "$DEPOT"
-cible="$DEPOT/Clio-${VERSION}-android-${SUFFIXE}.apk"
 
-# Le dépôt est un banc d'essai, pas une archive : il ne doit jamais contenir
-# qu'un seul APK de Clio — celui à tester maintenant. On retire donc les
-# précédents, y compris quand le nom change (version ou debug → release).
-find "$DEPOT" -maxdepth 1 -name 'Clio-*-android-*.apk' ! -name "$(basename "$cible")" -print -delete
+# Garde-fou : ne déposer que des fichiers réellement produits par CETTE
+# exécution. Un binaire périmé se testerait, ou se publierait, sans qu'on le sache.
+frais() { [[ -n "$1" && ! "$1" -ot "$REPERE" ]]; }
 
 apk="$(find src-tauri/gen/android/app/build/outputs -name '*.apk' | head -1)"
-
-# Garde-fou : ne déposer qu'un APK réellement produit par CETTE exécution.
-# Un binaire périmé sur le banc d'essai se testerait sans qu'on le sache.
-if [[ -z "$apk" || "$apk" -ot "$REPERE" ]]; then
-  echo "✗ aucun APK frais produit — le dépôt n'est pas mis à jour" >&2
+if ! frais "$apk"; then
+  echo "✗ aucun APK frais produit — le dossier de version n'est pas mis à jour" >&2
   exit 1
 fi
+cp "$apk" "$DEPOT/Clio-${VERSION}-android-${SUFFIXE}.apk"
 
-cp "$apk" "$cible"
-echo "→ déposé dans $cible ($(du -h "$cible" | cut -f1))"
+if [[ "$SUFFIXE" == "release" ]]; then
+  aab="$(find src-tauri/gen/android/app/build/outputs -name '*.aab' | head -1)"
+  if ! frais "$aab"; then
+    echo "✗ aucun AAB frais produit — rien à envoyer à Google Play" >&2
+    exit 1
+  fi
+  cp "$aab" "$DEPOT/Clio-${VERSION}-play.aab"
+fi
+
+# Notes de version, prêtes à coller dans la Play Console (500 caractères max).
+python3 - "$VERSION" > "$DEPOT/NOTES.md" <<'PY'
+import json, sys
+v = sys.argv[1]
+info = json.load(open('src/AppInfo.json'))
+e = next((c for c in info.get('changelog', []) if c.get('version') == v), None)
+print(f"# Clio {v}" + (f" — {e['date']}" if e else ""))
+print()
+for ligne in (e or {}).get('changes', []):
+    print(f"- {ligne}")
+PY
+
+echo
+echo "→ version $VERSION déposée dans $DEPOT :"
+ls -lh "$DEPOT" | tail -n +2

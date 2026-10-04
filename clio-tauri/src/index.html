@@ -1,4 +1,12 @@
 <!DOCTYPE html>
+<!--
+  Clio — L'atelier de l'écrivain
+  Copyright © 2025-2026 EuropaSoft — Yoann CRAMATTE. Tous droits réservés.
+  Code visible, non libre : toute copie, modification, redistribution ou
+  réutilisation est interdite sans autorisation écrite. Licence complète :
+  https://github.com/Yoann-CRAMATTE/Clio/blob/main/LICENSE
+  Composants tiers (JSZip, polices) : voir NOTICES dans le même dépôt.
+-->
 <html lang="fr">
 <head>
 <meta charset="UTF-8">
@@ -8,77 +16,14 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Clio">
-<script>
-/* ── Manifeste d'application, embarqué ───────────────────────────
-   Clio tient en un seul fichier : plutôt qu'un manifest.json et des
-   PNG à côté, on dessine les icônes au canvas et on injecte le
-   manifeste en data: URI. Chrome accepte ce format et l'application
-   devient installable (« Installer Clio » dans la barre d'adresse).
-
-   ATTENTION : l'installation exige un contexte sécurisé, donc une URL
-   https:// ou http://localhost. Ouvert en double-clic (file://), Clio
-   fonctionne normalement mais ne peut pas être installé — et Chrome ne
-   mémorisera pas durablement l'accès à vos dossiers .clio.
-   ──────────────────────────────────────────────────────────────── */
-(function () {
-  // Georgia plutôt que Playfair : les polices distantes ne sont pas encore
-  // chargées à ce stade, on veut une icône identique à chaque ouverture.
-  function icon(size) {
-    const c = document.createElement('canvas'); c.width = c.height = size;
-    const x = c.getContext('2d'), u = size / 512;
-    x.fillStyle = '#1a1208'; x.fillRect(0, 0, size, size);
-    x.strokeStyle = '#b8882a'; x.lineWidth = 8 * u;
-    x.strokeRect(64 * u, 64 * u, 384 * u, 384 * u);   // marge = zone sûre des icônes masquables
-    x.fillStyle = '#d4a843';
-    x.font = 'italic 700 ' + (248 * u) + 'px Georgia, serif';
-    x.textAlign = 'center'; x.textBaseline = 'middle';
-    x.fillText('C', size / 2, size / 2 - 10 * u);
-    x.strokeStyle = '#b8882a'; x.lineWidth = 6 * u;
-    x.beginPath(); x.moveTo(196 * u, 356 * u); x.lineTo(316 * u, 356 * u); x.stroke();
-    return c.toDataURL('image/png');
-  }
-
-  // Dessinées une seule fois : chaque appel encode un PNG en base64.
-  const ico192 = icon(192), ico256 = icon(256), ico512 = icon(512);
-
-  const manifest = {
-    name: "Clio — L'atelier de l'écrivain",
-    short_name: 'Clio',
-    description: "Traitement de texte pour romanciers : chapitres, scènes, notes et objectifs.",
-    lang: 'fr',
-    // Chemins absolus obligatoires : le manifeste étant une data: URI, il n'a
-    // pas d'URL de base permettant de résoudre './' ou un chemin relatif.
-    start_url: location.pathname,
-    scope: location.pathname.replace(/[^/]*$/, ''),
-    display: 'standalone',
-    orientation: 'any',
-    background_color: '#f5efe0',
-    theme_color: '#1a1208',
-    categories: ['productivity', 'books'],
-    icons: [
-      { src: ico192, sizes: '192x192', type: 'image/png', purpose: 'any' },
-      { src: ico512, sizes: '512x512', type: 'image/png', purpose: 'any' },
-      { src: ico512, sizes: '512x512', type: 'image/png', purpose: 'maskable' },
-    ],
-    // Associe les fichiers .clio à Clio : une fois l'application installée,
-    // un double-clic sur un .clio depuis l'explorateur de fichiers du système
-    // ouvre Clio directement, avec le lien vers le fichier déjà établi.
-    // Réservé aux systèmes de bureau (Windows, macOS, Linux, ChromeOS) :
-    // Android et iOS n'exposent pas ce mécanisme.
-    file_handlers: [{
-      action: location.pathname,
-      accept: { 'application/x-clio': ['.clio'] },
-      icons: [{ src: ico256, sizes: '256x256', type: 'image/png' }],
-      launch_type: 'single-client',
-    }],
-  };
-
-  const link = document.createElement('link');
-  link.rel = 'manifest';
-  link.href = 'data:application/manifest+json,' + encodeURIComponent(JSON.stringify(manifest));
-  document.head.appendChild(link);
-})();
-</script>
+<!-- Manifeste d'application et icônes : de vrais fichiers, à côté de la page.
+     Un manifeste injecté en data: URI (première approche) n'a pas d'adresse
+     de base : son installation n'était pas garantie. Ouvert en file://, Clio
+     fonctionne mais ne s'installe pas ; il faut https:// ou http://localhost.
+     Sous Tauri, ces balises sont sans effet. -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icone-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <script>
 /* ── Thèmes ──────────────────────────────────────────────────────
    Défini ici, avant le <style>, pour que la palette enregistrée soit
@@ -327,7 +272,10 @@ body::before {
 .app-footer a:hover { color: var(--gold); border-bottom-color: var(--gold); }
 .app-footer .sep { opacity: .35; }
 .app-footer .grow { flex: 1; }
-/* Second rayon : les œuvres achevées, mises en retrait sans être effacées */
+/* Rayons suivants : en cours, puis les œuvres achevées, mises en retrait
+   sans être effacées. Le premier rayon, les brouillons, reste discret. */
+#section-title-encours { margin-top: 2.6rem; }
+.section-title-draft { color: var(--ink-faint); }
 .section-title-done { margin-top: 2.6rem; color: var(--sage); }
 .section-title-done::after { background: rgba(var(--gold-rgb),.25); }
 /* Rayon vide : on garde la place, avec une indication discrète */
@@ -337,11 +285,37 @@ body::before {
   font-size: .84rem; font-style: italic; color: var(--ink-faint); opacity: .8;
 }
 .book-card { background: var(--cream); border: 1px solid var(--parchment-dark); cursor: pointer; transition: all .2s; box-shadow: 3px 3px 0 var(--parchment-dark); position: relative; }
+/* La carte dont le menu de statut est ouvert passe devant ses voisines. */
+.book-card:has(.book-card-statut-menu.open) { z-index: 30; }
 .book-card:hover { transform: translate(-2px,-3px); box-shadow: 5px 5px 0 var(--gold); border-color: var(--gold); }
 .book-card-spine { width: 100%; height: 6px; }
 .book-card-body { padding: 1.2rem 1.4rem; }
 .book-card-title { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; line-height: 1.2; margin-bottom: .3rem; }
-.book-card-genre { font-size: .78rem; color: var(--ink-faint); letter-spacing: .08em; text-transform: uppercase; margin-bottom: .8rem; }
+.book-card-genre { font-size: .78rem; color: var(--ink-faint); letter-spacing: .08em; text-transform: uppercase; margin-bottom: .5rem; }
+/* Statut du livre : une étiquette qui s'ouvre sur un petit menu */
+.book-card-statut-wrap { position: relative; margin-bottom: .8rem; }
+.book-card-statut {
+  font-family: 'Crimson Pro', serif; font-size: .78rem; letter-spacing: .05em;
+  border: 1px solid; border-radius: 999px; padding: .15rem .7rem; cursor: pointer;
+  background: transparent; display: inline-flex; align-items: center; gap: .35rem;
+}
+.book-card-statut .st-fleche { font-size: .65rem; opacity: .7; }
+.book-card-statut.st-brouillon { color: var(--ink-faint); border-color: rgba(var(--ink-rgb),.3); border-style: dashed; }
+.book-card-statut.st-encours   { color: var(--gold); border-color: rgba(var(--gold-rgb),.6); }
+.book-card-statut.st-termine   { color: var(--sage); border-color: var(--sage); }
+.book-card-statut-menu {
+  display: none; position: absolute; top: calc(100% + 4px); left: 0; z-index: 20;
+  background: var(--cream); border: 1px solid var(--gold);
+  box-shadow: 0 6px 18px rgba(var(--ink-rgb),.18); min-width: 150px;
+  flex-direction: column;
+}
+.book-card-statut-menu.open { display: flex; }
+.book-card-statut-menu button {
+  font-family: 'Crimson Pro', serif; font-size: .9rem; text-align: left;
+  background: none; border: none; padding: .55rem .9rem; cursor: pointer; color: var(--ink);
+}
+.book-card-statut-menu button:hover { background: var(--parchment); }
+.book-card-statut-menu button.actif { color: var(--gold); font-weight: 600; }
 .book-card-stats { display: flex; gap: 1rem; font-size: .82rem; border-top: 1px solid var(--parchment-dark); padding-top: .7rem; margin-top: .5rem; }
 .book-stat { display: flex; flex-direction: column; align-items: center; }
 .book-stat-val { font-weight: 600; font-size: 1rem; }
@@ -737,6 +711,14 @@ body::before {
 .block-gutter-btn.del:hover { background: rgba(var(--crimson-rgb),.12); color: var(--crimson); }
 .block-gutter-btn.grab { cursor: grab; }
 .block-gutter-btn.grab:active { cursor: grabbing; }
+/* Au doigt, la poignée ne doit pas faire défiler la page : c'est la
+   passerelle tactile (fin du script) qui prend le geste en charge. */
+.block-gutter-btn.grab, .scene-drag-handle, .drag-handle, .block-note-label { touch-action: none; }
+.drag-fantome {
+  position: fixed; z-index: 9999; pointer-events: none; opacity: .85;
+  max-height: 160px; overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,.25);
+  transform: rotate(1deg) scale(.96); transform-origin: top left;
+}
 
 /* card body */
 .block-body-wrap {
@@ -1169,7 +1151,7 @@ body::before {
 
 /* top progress bar */
 .reader-progress-bar {
-  position: fixed; top: 0; left: 0; height: 3px;
+  position: fixed; top: var(--safe-top); left: 0; height: 3px;
   background: var(--r-gold, #b8882a); z-index: 210;
   transition: width .15s linear;
 }
@@ -1177,7 +1159,11 @@ body::before {
 /* topbar */
 .reader-topbar {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 0 2rem; height: 52px; flex-shrink: 0;
+  /* Plein écran : la barre réserve la barre d'état et les bords courbes. */
+  padding-top: var(--safe-top);
+  padding-left: calc(2rem + var(--safe-left));
+  padding-right: calc(2rem + var(--safe-right));
+  height: calc(52px + var(--safe-top)); flex-shrink: 0;
   border-bottom: 1px solid var(--r-sep, rgba(var(--gold-rgb),.2));
   position: relative; z-index: 201;
 }
@@ -1203,7 +1189,7 @@ body::before {
 .reader-close-btn:hover { background: var(--r-gold, #b8882a); color: #fff; border-color: var(--r-gold, #b8882a); }
 
 /* main scroll area */
-.reader-body { flex: 1; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--r-sep, rgba(var(--gold-rgb),.2)) transparent; }
+.reader-body { flex: 1; overflow-y: auto; padding-bottom: var(--safe-bottom); scrollbar-width: thin; scrollbar-color: var(--r-sep, rgba(var(--gold-rgb),.2)) transparent; }
 .reader-content { max-width: 660px; margin: 0 auto; padding: 4rem 2rem 8rem; }
 
 /* book title */
@@ -1463,6 +1449,7 @@ body::before {
   border-left: 2px solid var(--gold);
   box-shadow: -6px 0 24px rgba(var(--ink-rgb),.18);
   display: flex; flex-direction: column;
+  padding-bottom: var(--safe-bottom);
   transform: translateX(110%);
   transition: transform .3s cubic-bezier(.4,0,.2,1);
 }
@@ -1474,7 +1461,14 @@ body::before {
 .trash-backdrop.open { display: block; }
 .trash-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: .9rem 1.4rem;
+  /* Le volet est collé au haut et au bord droit de l'écran : son en-tête
+     réserve la barre d'état, sinon les icônes du système le recouvrent.
+     Propriétés détaillées, pas le raccourci padding (il remettrait la
+     réservation à zéro sans que cela se voie). */
+  padding-top: calc(.9rem + var(--safe-top));
+  padding-bottom: .9rem;
+  padding-left: 1.4rem;
+  padding-right: calc(1.4rem + var(--safe-right));
   background: var(--bar); border-bottom: 2px solid var(--gold);
   flex-shrink: 0;
 }
@@ -1719,13 +1713,19 @@ body::before {
   width: 320px; background: var(--bar);
   border-right: 2px solid var(--gold);
   z-index: 200; flex-direction: column;
+  padding-bottom: var(--safe-bottom);
   box-shadow: 4px 0 20px rgba(0,0,0,.4);
   animation: slideInLeft .22s ease;
 }
 .writing-panel.open { display: flex; }
 @keyframes slideInLeft { from{transform:translateX(-100%)} to{transform:translateX(0)} }
 .writing-panel-header {
-  padding: 1.2rem 1.4rem; border-bottom: 1px solid rgba(var(--gold-rgb),.3);
+  /* Même réservation que la corbeille, côté gauche. */
+  padding-top: calc(1.2rem + var(--safe-top));
+  padding-bottom: 1.2rem;
+  padding-left: calc(1.4rem + var(--safe-left));
+  padding-right: 1.4rem;
+  border-bottom: 1px solid rgba(var(--gold-rgb),.3);
   display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
 }
 .writing-panel-title {
@@ -1983,7 +1983,7 @@ body::before {
 
 /* ── RECHERCHE PLEIN TEXTE ── */
 .search-bar {
-  display: none; position: fixed; top: 48px; left: 50%; transform: translateX(-50%);
+  display: none; position: fixed; top: calc(48px + var(--safe-top)); left: 50%; transform: translateX(-50%);
   z-index: 300; background: var(--bar); border: 1px solid var(--gold);
   box-shadow: 0 8px 32px rgba(0,0,0,.4); padding: .6rem .8rem;
   display: none; align-items: center; gap: .5rem; min-width: 480px;
@@ -2450,8 +2450,11 @@ body::before {
     </div>
   </div>
   <div class="library-body">
-    <!-- Deux rayons distincts : ce qui s'écrit, puis ce qui est achevé.
-         Les titres et la seconde grille sont masqués quand ils sont vides. -->
+    <!-- Trois rayons, dans l'ordre de vie d'un livre : ce qui se pose,
+         ce qui s'écrit, ce qui est achevé. -->
+    <div class="section-title section-title-draft" id="section-title-brouillons">Brouillons</div>
+    <div class="books-grid" id="books-grid-draft"></div>
+
     <div class="section-title" id="section-title-encours">En cours</div>
     <div class="books-grid" id="books-grid"></div>
 
@@ -3216,24 +3219,55 @@ body::before {
 </div>
 
 <script>
-/* ═══════════════════ CONFIG APPLICATION ═══════════════════ */
+/* ═══════════════════ CONFIG APPLICATION ═══════════════════
+   L'identité de l'application — nom, version, entreprise, contact, copyright,
+   description — se lit dans AppInfo.json, posé à côté de cette page : seule
+   source de vérité, que lisent aussi build-web.sh, sync-version.sh et
+   tauri.conf.json. Ne rien recopier ici.
+   Les valeurs d'identité ci-dessous ne sont qu'un repli minimal, gardé quand
+   le fichier est illisible (page ouverte en file://, où fetch est refusé).
+   Le reste (slogan, licence, langue…) est du texte d'interface et vit ici. */
 const APP_CONFIG = {
   nom:         "Clio",
   slogan:      "L'atelier de l'écrivain",
-  description: "Clio est un environnement d'écriture conçu pour les auteurs qui pensent par fragments — scènes, idées, dialogues — avant de les assembler en œuvre. Chaque chapitre est un espace de travail vivant, réorganisable à volonté.",
-  version:     "1.0.0",
-  date:        "2025",
+  description: "",
+  version:     "",          // inconnue tant qu'AppInfo.json n'est pas lu
+  date:        "",          // date de la version, d'après le journal
+  copyright:   "",
   entreprise:  "EuropaSoft",
-  programmeur: "Yoann CRAMATTE",
+  programmeur: "",
   assistanceIA:"avec Claude, l'IA d'Anthropic",
   licence:     "Usage privé",
-  siteWeb:     "http://www.europasoft.eu",
-  mailContact: "accueil@europasoft.eu",
+  siteWeb:     "",
+  mailContact: "",
   github:      "",
   technologie: "HTML · CSS · JavaScript",
   langue:      "Français",
-  build:       "2026-09-13-tauri"
+  build:       "2026-10-04-tauri"
 };
+/* Chargement d'AppInfo.json, une fois, au démarrage. Même chemin relatif sur
+   le web (servi depuis src/, mis en cache par le service worker) et sous Tauri
+   (src/ embarqué dans le binaire) : rien ne part sur le réseau extérieur.
+   Qui affiche l'identité dès le démarrage attend cette promesse (bas d'écran) ;
+   les autres lecteurs (À propos, contact, manifeste d'un .clio) lisent
+   APP_CONFIG au moment de l'action. Elle ne rejette jamais : en cas d'échec,
+   le repli ci-dessus reste en place. */
+const APP_INFO_CHARGEE = fetch('AppInfo.json')
+  .then(r => r.ok ? r.json() : null)
+  .then(i => {
+    if (!i) return;
+    const journal = Array.isArray(i.changelog) ? i.changelog : [];
+    const courante = journal.find(e => e && e.version === i.version);
+    const champs = {
+      nom: i.appName, version: i.version, entreprise: i.company,
+      programmeur: i.developer, siteWeb: i.website, mailContact: i.contact,
+      copyright: i.copyright, description: i.description,
+      date: courante && courante.date,
+    };
+    for (const [cle, val] of Object.entries(champs))
+      if (typeof val === 'string' && val) APP_CONFIG[cle] = val;
+  })
+  .catch(() => {});
 /* ═══════════════════ CONFIG ═══════════════════ */
 const GENRE_COLORS = {
   'Roman':['#3a5a3a','#b8882a'],'Nouvelle':['#3a4a6a','#d4a843'],
@@ -3271,36 +3305,184 @@ function sanitizeBook(book) {
   });
   return book;
 }
-function loadBooks(){
-  try { books = JSON.parse(localStorage.getItem('clio-books')||'[]').map(sanitizeBook); }
-  catch(e) { books=[]; }
-  renderBooks();
+/* ═══════════ STOCKAGE DES LIVRES — IndexedDB, repli localStorage ═══════════
+   Jusqu'à 1.0.1, tous les livres (images comprises, en base64) tenaient dans
+   une seule clé localStorage 'clio-books'. Le quota (5 à 10 Mo selon le
+   moteur) saturait vite, et l'auteur ne travaillait plus qu'en mémoire.
+
+   Les livres et la corbeille vivent désormais dans la base IndexedDB
+   'clio-livres', magasin 'donnees' : une entrée par ancienne clé ('clio-books',
+   'clio-trash'), contenant le même texte JSON qu'avant. Les petits réglages
+   (thème, panneaux, partage texte/notes…) restent dans localStorage.
+
+   Migration : au premier lancement, chaque ancienne clé est recopiée, relue
+   et comparée ; l'entrée meta 'migration' n'est posée qu'ensuite. Un échec
+   laisse la session sur localStorage, intact, et la migration est retentée au
+   lancement suivant.
+
+   Les anciennes clés NE sont PAS effacées : elles restent en filet de sécurité,
+   figées au jour de la migration (plus rien n'y est écrit). À retirer dans une
+   version ultérieure — pas avant 1.1, et seulement si meta 'migration'.date a
+   plus de 60 jours — en supprimant 'clio-books' et 'clio-trash' de
+   localStorage, ce qui rendra aussi aux réglages le quota qu'elles occupent.
+
+   IndexedDB indisponible (absente, refusée, muette) : comportement d'avant,
+   localStorage, quota compris.
+
+   Tout est asynchrone : rien n'est écrit avant que LIVRES_PRETS soit résolu,
+   sans quoi la liste encore vide du démarrage écraserait la bibliothèque.
+   ═══════════════════════════════════════════════════════════════════════════ */
+const LIVRES_BASE = 'clio-livres';
+const LIVRES_CLES = ['clio-books', 'clio-trash'];
+let _livresDb = null;          // null : repli localStorage
+let _livresSecours = false;    // IndexedDB muette après migration : on lit la copie figée
+let _ecritureBloquee = null;   // lecture ratée : ne surtout pas écraser la base
+let _livresPretsResoudre;
+const LIVRES_PRETS = new Promise(r => { _livresPretsResoudre = r; });
+
+function ouvrirBaseLivres() {
+  return new Promise((res, rej) => {
+    if (!window.indexedDB) return rej(new Error('IndexedDB absent'));
+    let req;
+    try { req = indexedDB.open(LIVRES_BASE, 1); } catch (e) { return rej(e); }
+    req.onupgradeneeded = () => {
+      const db = req.result;
+      if (!db.objectStoreNames.contains('donnees')) db.createObjectStore('donnees');
+      if (!db.objectStoreNames.contains('meta'))    db.createObjectStore('meta');
+    };
+    req.onsuccess = () => res(req.result);
+    req.onerror   = () => rej(req.error);
+    // Certains WebView laissent l'ouverture pendante sans jamais répondre :
+    // passé ce délai, mieux vaut localStorage qu'une bibliothèque qui n'arrive pas.
+    setTimeout(() => rej(new Error('IndexedDB ne répond pas')), 5000);
+  });
 }
-function saveBooks(){
-  const el=document.getElementById('statusbar-saved');
+function livresTx(store, mode, agir) {
+  return new Promise((res, rej) => {
+    // 'strict' : la transaction n'est close qu'une fois sur disque (Chrome est
+    // en 'relaxed' par défaut). Les moteurs qui ne connaissent pas l'option l'ignorent.
+    const tx  = _livresDb.transaction(store, mode, { durability: 'strict' });
+    const req = agir(tx.objectStore(store));
+    tx.oncomplete = () => res(req.result);   // oncomplete, pas onsuccess : écriture validée
+    tx.onerror    = () => rej(tx.error || req.error);
+    tx.onabort    = () => rej(tx.error || new Error('Transaction annulée'));
+  });
+}
+const livresLire   = (cle, store = 'donnees') => livresTx(store, 'readonly',  s => s.get(cle));
+const livresEcrire = (cle, val, store = 'donnees') => livresTx(store, 'readwrite', s => s.put(val, cle));
+
+async function ouvrirStockageLivres() {
+  try { _livresDb = await ouvrirBaseLivres(); }
+  catch (e) {
+    console.warn('Clio : IndexedDB indisponible, livres dans localStorage —', e);
+    try { _livresSecours = localStorage.getItem('clio-stockage') === 'indexeddb'; } catch {}
+    return;
+  }
   try {
-    localStorage.setItem('clio-books',JSON.stringify(books));
-    if(el){ el.textContent='✓ Sauvegardé'; el.classList.remove('save-failed'); }
-  } catch(e) {
-    // Sans ce filet, un échec d'écriture (quota atteint, mode privé, stockage
-    // bloqué) passait totalement inaperçu : l'indicateur restait sur « … » et
-    // l'auteur croyait son texte enregistré.
-    if(el){ el.textContent='⚠ NON SAUVEGARDÉ'; el.classList.add('save-failed'); }
-    if(!saveBooks._alerted){
-      saveBooks._alerted = true;
-      showAlert({ icon:'⚠', title:"Sauvegarde impossible",
-        msg:`Le navigateur refuse d'enregistrer (${e.name}). Vos modifications ne sont conservées que le temps de cette session. `
-          + `Exportez vos livres en .clio dès maintenant pour ne rien perdre.` });
+    if (await livresLire('migration', 'meta')) return;
+    for (const cle of LIVRES_CLES) {
+      const ancien = localStorage.getItem(cle);
+      if (ancien === null) continue;
+      await livresEcrire(cle, ancien);
+      if (await livresLire(cle) !== ancien) throw new Error(`relecture de ${cle} différente`);
     }
-    // On ne relance pas l'erreur : la suite de scheduleSave() enchaîne sur
-    // l'écriture du fichier .clio lié, qui est le support le plus durable.
-    // C'est précisément quand le navigateur lâche qu'il faut la laisser passer.
+    await livresEcrire('migration', { date: new Date().toISOString(), cles: LIVRES_CLES }, 'meta');
+    // Témoin côté localStorage : si IndexedDB fait défaut un jour, on saura
+    // que les anciennes clés ne sont plus qu'une copie figée.
+    try { localStorage.setItem('clio-stockage', 'indexeddb'); } catch {}
+  } catch (e) {
+    // Rien n'est perdu : localStorage reste la référence pour cette session.
+    console.warn('Clio : migration vers IndexedDB interrompue —', e);
+    _livresDb = null;
   }
 }
+async function lireDonneesLivres(cle) {
+  return _livresDb ? await livresLire(cle) : localStorage.getItem(cle);
+}
+
+async function loadBooks(){
+  let stockes = [];
+  try {
+    const brut = await lireDonneesLivres('clio-books');
+    try { stockes = JSON.parse(brut || '[]').map(sanitizeBook); }
+    catch (e) {
+      // Texte illisible : mis de côté avant que la prochaine sauvegarde l'écrase.
+      if (_livresDb) livresEcrire('clio-books-illisible-' + Date.now(), brut).catch(() => {});
+      stockes = [];
+    }
+  } catch (e) {
+    // Lecture impossible : la bibliothèque est peut-être intacte mais invisible.
+    // Sauvegarder maintenant la remplacerait par une liste vide.
+    _ecritureBloquee = e;
+    showAlert({ icon:'⚠', title:"Bibliothèque illisible",
+      msg:`Clio n'a pas pu lire vos livres (${e.name}). Rien ne sera enregistré pendant cette session, pour ne pas écraser votre bibliothèque. Relancez Clio.` });
+  }
+  // Livres arrivés pendant le chargement (création, fichier ouvert au démarrage) :
+  // gardés en tête, comme s'ils avaient été ajoutés après.
+  const arrives = books.filter(b => !stockes.some(s => s.id === b.id));
+  books = arrives.concat(stockes);
+  renderBooks();
+  if (_livresSecours)
+    showAlert({ icon:'⚠', title:"Stockage principal inaccessible",
+      msg:`Clio ne parvient pas à ouvrir sa base de livres et affiche la copie de sécurité laissée lors de la migration : elle peut être ancienne. `
+        + `Exportez en .clio ce que vous modifiez aujourd'hui, puis relancez Clio.` });
+}
+
+/* Écrivain sérialisé : une seule écriture à la fois par clé, et les demandes
+   reçues pendant ce temps se fondent en une seule, faite avec l'état le plus
+   récent. Les écritures ne peuvent donc ni se croiser ni arriver dans le
+   désordre. Rend une promesse, que les appelants historiques ignorent. */
+function creerEcrivain(cle, serialiser, surReussite, surEchec) {
+  let enCours = null, demande = false;
+  async function boucle() {
+    await LIVRES_PRETS;
+    while (demande) {
+      demande = false;
+      try {
+        if (_ecritureBloquee) throw _ecritureBloquee;
+        const texte = serialiser();      // instantané pris au moment d'écrire
+        if (_livresDb) await livresEcrire(cle, texte);
+        else localStorage.setItem(cle, texte);
+        surReussite();
+      } catch (e) { surEchec(e); }
+    }
+    enCours = null;   // dans le même tour que le dernier test : aucune demande ne se perd
+  }
+  return function () {
+    demande = true;
+    if (!enCours) enCours = boucle();
+    return enCours;
+  };
+}
+function signalerEchecSauvegarde(e) {
+  // Sans ce filet, un échec d'écriture (quota atteint, mode privé, stockage
+  // bloqué) passait totalement inaperçu : l'indicateur restait sur « … » et
+  // l'auteur croyait son texte enregistré.
+  const el=document.getElementById('statusbar-saved');
+  if(el){ el.textContent='⚠ NON SAUVEGARDÉ'; el.classList.add('save-failed'); }
+  if(!signalerEchecSauvegarde._alerted){
+    signalerEchecSauvegarde._alerted = true;
+    showAlert({ icon:'⚠', title:"Sauvegarde impossible",
+      msg:`Le navigateur refuse d'enregistrer (${e.name}). Vos modifications ne sont conservées que le temps de cette session. `
+        + `Exportez vos livres en .clio dès maintenant pour ne rien perdre.` });
+  }
+  // On ne relance pas l'erreur : la suite de scheduleSave() enchaîne sur
+  // l'écriture du fichier .clio lié, qui est le support le plus durable.
+  // C'est précisément quand le navigateur lâche qu'il faut la laisser passer.
+}
+const saveBooks = creerEcrivain('clio-books', () => JSON.stringify(books), () => {
+  const el=document.getElementById('statusbar-saved');
+  if(!el) return;
+  el.classList.remove('save-failed');
+  // Une frappe arrivée pendant l'écriture n'est pas encore enregistrée : on laisse « … ».
+  if(!scheduleSave._enAttente) el.textContent='✓ Sauvegardé';
+}, signalerEchecSauvegarde);
 function scheduleSave(){
   const el=document.getElementById('statusbar-saved'); if(el)el.textContent='…';
+  scheduleSave._enAttente = true;
   clearTimeout(saveTimeout);
   saveTimeout=setTimeout(()=>{
+    scheduleSave._enAttente = false;
     saveBooks();
     autoSaveClioIfLinked();
     recordWritingProgress(); // ← écriture suivie
@@ -3322,17 +3504,20 @@ function chapTotalWords(book){
 function renderBooks(){
   const grid=document.getElementById('books-grid'), empty=document.getElementById('empty-msg');
   const gridDone=document.getElementById('books-grid-done');
-  grid.innerHTML=''; gridDone.innerHTML='';
-  const titres=['section-title-encours','section-title-termines'].map(id=>document.getElementById(id));
+  const gridDraft=document.getElementById('books-grid-draft');
+  grid.innerHTML=''; gridDone.innerHTML=''; gridDraft.innerHTML='';
+  const titres=['section-title-brouillons','section-title-encours','section-title-termines'].map(id=>document.getElementById(id));
   if(!books.length){
     empty.style.display='block';
     titres.forEach(t=>{ if(t) t.style.display='none'; });
-    gridDone.style.display='none';
+    gridDone.style.display='none'; gridDraft.style.display='none';
     return;
   }
   empty.style.display='none';
   books.forEach((book,i)=>{
-    const [c1,c2]=GENRE_COLORS[book.genre]||['#3a5a3a','#b8882a'];
+    // hasOwnProperty : un genre « constructor » ou « __proto__ » venu d'un .clio
+    // renverrait une fonction, et la déstructuration ferait tomber toute la bibliothèque.
+    const [c1,c2]=(Object.prototype.hasOwnProperty.call(GENRE_COLORS, book.genre) && GENRE_COLORS[book.genre])||['#3a5a3a','#b8882a'];
     const tw=chapTotalWords(book);
     const GENRES=['Roman','Nouvelle','Science-Fiction','Fantasy','Thriller','Policier','Horreur','Romance','Biographie','Essai','Conte','Poésie'];
     const genreOptions=GENRES.map(g=>`<option${g===book.genre?' selected':''}>${g}</option>`).join('');
@@ -3344,6 +3529,12 @@ function renderBooks(){
       <div class="book-card-title">${esc(book.title)}</div>
       ${book.author?`<div style="font-size:.8rem;color:var(--ink-soft);font-style:italic;margin-bottom:.15rem;">par ${esc(book.author)}</div>`:''}
       <div class="book-card-genre">${esc(book.genre)}</div>
+      <div class="book-card-statut-wrap">
+        <button class="book-card-statut st-${statutLivre(book)}" title="Changer le statut">${STATUTS[statutLivre(book)].icone} ${STATUTS[statutLivre(book)].nom} <span class="st-fleche">▾</span></button>
+        <div class="book-card-statut-menu">
+          ${Object.entries(STATUTS).map(([cle,st])=>`<button data-statut="${cle}" class="${cle===statutLivre(book)?'actif':''}">${st.icone} ${st.nom}</button>`).join('')}
+        </div>
+      </div>
       ${book.locked?`<div class="book-card-locked-banner">🔒 Lecture seule</div>`:''}
       ${book.desc?`<div style="font-size:.82rem;color:var(--ink-faint);font-style:italic;margin-bottom:.5rem;line-height:1.3">${esc(book.desc.slice(0,90))}${book.desc.length>90?'…':''}</div>`:''}
       <div class="book-card-stats">
@@ -3396,7 +3587,7 @@ function renderBooks(){
       </div>
       <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.7rem">
         <label class="card-edit-label" style="margin-bottom:0;white-space:nowrap">Objectif</label>
-        <input class="card-edit-input" id="ep-goal-${i}" type="number" value="${book.goal||80000}" style="width:90px;flex-shrink:0" />
+        <input class="card-edit-input" id="ep-goal-${i}" type="number" value="${Number(book.goal)||80000}" style="width:90px;flex-shrink:0" />
         <span style="font-size:.78rem;color:var(--ink-faint)">mots</span>
       </div>
       <button class="card-edit-save" data-idx="${i}">✓ Enregistrer</button>
@@ -3404,6 +3595,16 @@ function renderBooks(){
 
     card.querySelector('.btn-card-open').onclick = e=>{ e.stopPropagation(); openBook(i); };
     card.querySelector('.book-card-lock').onclick = e=>{ e.stopPropagation(); toggleBookLock(i); };
+    const menuStatut = card.querySelector('.book-card-statut-menu');
+    card.querySelector('.book-card-statut').onclick = e=>{
+      e.stopPropagation();
+      const ouvert = menuStatut.classList.contains('open');
+      document.querySelectorAll('.book-card-statut-menu.open').forEach(m=>m.classList.remove('open'));
+      if(!ouvert) menuStatut.classList.add('open');
+    };
+    menuStatut.querySelectorAll('[data-statut]').forEach(b=>{
+      b.onclick = e=>{ e.stopPropagation(); changerStatut(i, b.dataset.statut); };
+    });
     const saveBtn = card.querySelector('.btn-card-save');
     const relinkBtn = card.querySelector('.btn-card-relink');
     if (saveBtn)  saveBtn.onclick  = e=>{ e.stopPropagation(); saveBookAsClio(i); };
@@ -3431,20 +3632,21 @@ function renderBooks(){
       b.updatedAt = new Date().toISOString();
       saveBooks(); renderBooks();
     };
-    // Un livre verrouillé est considéré comme achevé : il descend au rayon
-    // « Terminés », sous les œuvres en cours.
-    (book.locked ? gridDone : grid).appendChild(card);
+    // Chaque livre se range au rayon de son statut ; un livre verrouillé
+    // est achevé et descend aux « Terminés ».
+    ({ brouillon: gridDraft, encours: grid, termine: gridDone })[statutLivre(book)].appendChild(card);
   });
 
-  // Les deux rayons restent affichés en permanence, même vides : la
+  // Les trois rayons restent affichés en permanence, même vides : la
   // bibliothèque garde une structure stable, et l'auteur voit dès l'accueil
-  // qu'un livre achevé ira se ranger plus bas.
-  const nbEnCours = grid.children.length, nbTermines = gridDone.children.length;
-  const titreEnCours = document.getElementById('section-title-encours');
-  const titreTermines = document.getElementById('section-title-termines');
+  // où chaque livre ira se ranger.
+  const nbBrouillons = gridDraft.children.length, nbEnCours = grid.children.length, nbTermines = gridDone.children.length;
+  const [titreBrouillons, titreEnCours, titreTermines] = titres;
+  if (titreBrouillons) { titreBrouillons.style.display = ''; titreBrouillons.textContent = `Brouillons (${nbBrouillons})`; }
   if (titreEnCours)  { titreEnCours.style.display = '';  titreEnCours.textContent  = `En cours (${nbEnCours})`; }
   if (titreTermines) { titreTermines.style.display = ''; titreTermines.textContent = `Terminés (${nbTermines})`; }
-  gridDone.style.display = '';
+  gridDone.style.display = ''; gridDraft.style.display = '';
+  if (!nbBrouillons) gridDraft.innerHTML = `<div class="shelf-empty">Aucun brouillon. Un nouveau livre commence ici, le temps de poser l'idée.</div>`;
   if (!nbEnCours)  grid.innerHTML     = `<div class="shelf-empty">Aucune œuvre en cours.</div>`;
   if (!nbTermines) gridDone.innerHTML = `<div class="shelf-empty">Aucune œuvre terminée. Verrouillez un livre (🔒) pour le ranger ici.</div>`;
 }
@@ -3471,6 +3673,7 @@ function createBook(){
   const book={ id:uid(), title, author: document.getElementById('new-author').value.trim(),
     genre:document.getElementById('new-genre').value, desc:document.getElementById('new-desc').value.trim(),
     createdAt:new Date().toISOString(), updatedAt:new Date().toISOString(),
+    status:'brouillon',   // un livre commence au rayon des brouillons
     chapters:[{id:uid(),title:'Chapitre 1',notes:'',blocks:[{id:uid(),title:'',text:'',accentIdx:0}]}],
     characters:[], places:[], goal: parseInt(document.getElementById('new-goal').value)||80000 };
   books.unshift(book); saveBooks(); renderBooks(); closeModal();
@@ -3518,9 +3721,29 @@ function applyReadonlyMode(locked) {
   }
 }
 
-function toggleBookLock(i) {
-  books[i].locked = !books[i].locked;
+/* Trois statuts, dans l'ordre de vie d'un livre. « Terminé » ne fait qu'un
+   avec le verrou : un livre achevé est en lecture seule, et le déverrouiller
+   le ramène en cours. Un livre sans statut (créé avant la 1.0.3) est en cours. */
+const STATUTS = {
+  brouillon: { nom: 'Brouillon', icone: '✎' },
+  encours:   { nom: 'En cours',  icone: '●' },
+  termine:   { nom: 'Terminé',   icone: '🔒' },
+};
+function statutLivre(book) {
+  if (book.locked) return 'termine';
+  return book.status === 'brouillon' ? 'brouillon' : 'encours';
+}
+function changerStatut(i, statut) {
+  const b = books[i];
+  if (!b || !STATUTS[statut]) return;
+  b.status = statut;
+  b.locked = statut === 'termine';
+  b.updatedAt = new Date().toISOString();
   saveBooks(); renderBooks();
+}
+
+function toggleBookLock(i) {
+  changerStatut(i, books[i].locked ? 'encours' : 'termine');
 }
 
 function openBook(idx){
@@ -3548,6 +3771,7 @@ function openBook(idx){
 function unlockCurrentBook() {
   if (currentBookIdx < 0) return;
   books[currentBookIdx].locked = false;
+  books[currentBookIdx].status = 'encours';
   saveBooks(); renderBooks(); applyReadonlyMode(false);
 }
 
@@ -4246,6 +4470,21 @@ function onNotesInput(){ books[currentBookIdx].chapters[currentChapIdx].notes=do
 function getScenes(){ return books[currentBookIdx].chapters[currentChapIdx].scenes; }
 function getBlocks(sceneIdx){ return getScenes()[sceneIdx].blocks; }
 
+/* Scènes d'où vient le bloc en cours de glissement. Survoler un chapitre
+   l'ouvre au bout de 700 ms : le chapitre courant n'est alors plus celui du
+   bloc, et y chercher la source déplaçait un autre bloc, ou aucun. */
+function chapIdxSourceBloc(){ return blockDragSrcChap ? blockDragSrcChap.chapIdx : currentChapIdx; }
+function scenesSourceBloc(){
+  const ch = books[currentBookIdx].chapters[chapIdxSourceBloc()];
+  if (!ch) return getScenes();
+  migrateChapToScenes(ch);
+  return ch.scenes;
+}
+/* Vrai si le bloc glissé vient de la scène si du chapitre affiché. */
+function blocVientDeLaScene(si){
+  return !!blockDragInfo && blockDragInfo.sceneIdx===si && chapIdxSourceBloc()===currentChapIdx;
+}
+
 let sceneDragSrc = null; // index de scène en cours de drag
 let blockDragInfo = null; // { sceneIdx, blockIdx }
 let noteDragInfo  = null; // { sceneIdx, blockId } — note en cours de déplacement
@@ -4270,8 +4509,8 @@ function deplacerNoteVersTexte(sceneIdx, blockId) {
   renderScenes(); updateAllStats(); scheduleSave();
 }
 
-function deplacerTexteVersNote(sceneIdx, blockIdx, cibleSceneIdx, cibleBlockId) {
-  const src = getScenes()[sceneIdx]?.blocks[blockIdx];
+function deplacerTexteVersNote(sceneIdx, blockIdx, cibleSceneIdx, cibleBlockId, scenesSource = getScenes()) {
+  const src = scenesSource[sceneIdx]?.blocks[blockIdx];
   const dst = getScenes()[cibleSceneIdx]?.blocks.find(x => x.id === cibleBlockId);
   if (!src || !dst || !(src.text || '').trim()) return;
   dst.note = fusionTextes(dst.note, src.text);
@@ -4459,24 +4698,24 @@ function renderScenes(){
               <circle cx="2.5" cy="11.5" r="1.5"/><circle cx="7.5" cy="11.5" r="1.5"/>
             </svg>
           </div>
-          <div class="block-gutter-btn" data-img-si="${si}" data-img-bid="${block.id}" title="Insérer une image" style="font-size:.85rem">🖼</div>
-          <div class="block-gutter-btn del" data-si="${si}" data-del="${block.id}" title="Supprimer">✕</div>
+          <div class="block-gutter-btn" data-img-si="${si}" data-img-bid="${esc(block.id)}" title="Insérer une image" style="font-size:.85rem">🖼</div>
+          <div class="block-gutter-btn del" data-si="${si}" data-del="${esc(block.id)}" title="Supprimer">✕</div>
         </div>
         <div class="block-body-wrap" style="border-left-color:${accent}">
-          <input class="block-title-input" placeholder="Titre optionnel…" value="${esc(block.title)}" data-si="${si}" data-bid="${block.id}" />
-          <div class="block-images-zone" data-si="${si}" data-bid="${block.id}">
+          <input class="block-title-input" placeholder="Titre optionnel…" value="${esc(block.title)}" data-si="${si}" data-bid="${esc(block.id)}" />
+          <div class="block-images-zone" data-si="${si}" data-bid="${esc(block.id)}">
             ${(block.images||[]).map((img,imgIdx)=>`
               <div class="block-image-wrap" data-imgidx="${imgIdx}">
-                <img src="${img.data}" alt="${esc(img.caption||'')}" />
+                <img src="${srcImage(img)}" alt="${esc(img.caption||'')}" />
                 <div class="block-image-actions">
-                  <button class="block-image-btn" data-rmimg="${imgIdx}" data-si="${si}" data-bid="${block.id}" title="Supprimer l'image">✕</button>
+                  <button class="block-image-btn" data-rmimg="${imgIdx}" data-si="${si}" data-bid="${esc(block.id)}" title="Supprimer l'image">✕</button>
                 </div>
-                <input class="block-image-caption" placeholder="Légende optionnelle…" value="${esc(img.caption||'')}" data-si="${si}" data-bid="${block.id}" data-imgidx="${imgIdx}" />
+                <input class="block-image-caption" placeholder="Légende optionnelle…" value="${esc(img.caption||'')}" data-si="${si}" data-bid="${esc(block.id)}" data-imgidx="${imgIdx}" />
               </div>`).join('')}
           </div>
-          <textarea class="block-textarea" placeholder="Écrivez ici…" data-si="${si}" data-bid="${block.id}">${esc(block.text)}</textarea>
+          <textarea class="block-textarea" placeholder="Écrivez ici…" data-si="${si}" data-bid="${esc(block.id)}">${esc(block.text)}</textarea>
           <div class="block-meta">
-            <span class="block-word-count" id="bwc-${block.id}">${wc?wc+' mot'+(wc>1?'s':''):''}</span>
+            <span class="block-word-count" id="bwc-${esc(block.id)}">${wc?wc+' mot'+(wc>1?'s':''):''}</span>
             <div class="block-accents">${dotsHTML}</div>
           </div>
         </div>`;
@@ -4591,7 +4830,7 @@ function renderScenes(){
       });
       card.addEventListener('dragover', e=>{
         e.preventDefault();
-        if(!blockDragInfo || (blockDragInfo.sceneIdx===si && blockDragInfo.blockIdx===bi)) return;
+        if(!blockDragInfo || (blocVientDeLaScene(si) && blockDragInfo.blockIdx===bi)) return;
         document.querySelectorAll('.block-card').forEach(c=>c.classList.remove('drag-over-top','drag-over-bottom'));
         const r=card.getBoundingClientRect();
         card.classList.add(e.clientY<r.top+r.height/2?'drag-over-top':'drag-over-bottom');
@@ -4600,13 +4839,20 @@ function renderScenes(){
       card.addEventListener('drop', e=>{
         e.preventDefault(); card.classList.remove('drag-over-top','drag-over-bottom');
         if(!blockDragInfo) return;
+        // Sans cet arrêt, le dépôt remonte à la colonne de la scène, dont le
+        // gestionnaire déplace à son tour un bloc : venant d'une autre scène,
+        // deux blocs partaient au lieu d'un.
+        e.stopPropagation();
         const srcSi=blockDragInfo.sceneIdx, srcBi=blockDragInfo.blockIdx;
-        const scenes=getScenes();
+        const scenes=getScenes(), source=scenesSourceBloc();
         const r=card.getBoundingClientRect();
         let targetBi = e.clientY<r.top+r.height/2 ? bi : bi+1;
-        const [moved]=scenes[srcSi].blocks.splice(srcBi,1);
+        const memeScene = blocVientDeLaScene(si);
+        const [moved]=source[srcSi].blocks.splice(srcBi,1);
         if(!moved) return;
-        if(srcSi===si && srcBi<targetBi) targetBi--;
+        // Un chapitre ne reste jamais sans bloc éditable (invariant I3)
+        if(!memeScene && source[srcSi].blocks.length===0) source[srcSi].blocks=[{id:uid(),title:'',text:'',accentIdx:0}];
+        if(memeScene && srcBi<targetBi) targetBi--;
         scenes[si].blocks.splice(targetBi,0,moved);
         renderScenes(); scheduleSave();
       });
@@ -4632,7 +4878,7 @@ function renderScenes(){
     scene.blocks.forEach((block) => {
       const cell = document.createElement('div'); cell.className='block-note-cell'; cell.dataset.bid = block.id; cell.dataset.si = si;
       cell.innerHTML=`<div class="block-note-label">Note</div>
-        <textarea class="block-note-textarea" placeholder="Note, idée, rappel…" data-si="${si}" data-bid="${block.id}">${esc(block.note||'')}</textarea>`;
+        <textarea class="block-note-textarea" placeholder="Note, idée, rappel…" data-si="${si}" data-bid="${esc(block.id)}">${esc(block.note||'')}</textarea>`;
       cell.querySelector('.block-note-textarea').addEventListener('input', function(){
         const siIdx=parseInt(this.dataset.si);
         const b=getScenes()[siIdx]?.blocks.find(x=>x.id===this.dataset.bid);
@@ -4671,8 +4917,9 @@ function renderScenes(){
         e.preventDefault(); e.stopPropagation();
         cell.classList.remove('note-drop-target');
         const { sceneIdx, blockIdx } = blockDragInfo;
+        const source = scenesSourceBloc();
         blockDragInfo=null; blockDragSrcChap=null;
-        deplacerTexteVersNote(sceneIdx, blockIdx, parseInt(cell.dataset.si), cell.dataset.bid);
+        deplacerTexteVersNote(sceneIdx, blockIdx, parseInt(cell.dataset.si), cell.dataset.bid, source);
       });
 
       sceneNotesCol.appendChild(cell);
@@ -4715,7 +4962,7 @@ function renderScenes(){
 
     // ── Zone de drop pour bloc venant d'une autre scène ──
     blocksCol.addEventListener('dragover',e=>{
-      if(!blockDragInfo||blockDragInfo.sceneIdx===si) return;
+      if(!blockDragInfo||blocVientDeLaScene(si)) return;
       e.preventDefault(); e.stopPropagation();
       document.querySelectorAll('.scene-container').forEach(s=>s.classList.remove('block-drop-active'));
       sc.classList.add('block-drop-active');
@@ -4725,12 +4972,13 @@ function renderScenes(){
     });
     blocksCol.addEventListener('drop',e=>{
       sc.classList.remove('block-drop-active');
-      if(!blockDragInfo||blockDragInfo.sceneIdx===si) return;
+      if(!blockDragInfo||blocVientDeLaScene(si)) return;
       e.preventDefault(); e.stopPropagation();
-      const scenes=getScenes();
+      const scenes=getScenes(), source=scenesSourceBloc();
       const {sceneIdx:srcSi,blockIdx:srcBi}=blockDragInfo;
-      const [moved]=scenes[srcSi].blocks.splice(srcBi,1);
-      if(scenes[srcSi].blocks.length===0) scenes[srcSi].blocks=[{id:uid(),title:'',text:'',accentIdx:0}];
+      const [moved]=source[srcSi].blocks.splice(srcBi,1);
+      if(!moved) return;
+      if(source[srcSi].blocks.length===0) source[srcSi].blocks=[{id:uid(),title:'',text:'',accentIdx:0}];
       // Si la scène cible n'a qu'un bloc vide, le remplacer
       if(scenes[si].blocks.length===1&&!(scenes[si].blocks[0].text||'').trim()&&!(scenes[si].blocks[0].title||'').trim())
         scenes[si].blocks=[moved];
@@ -4804,7 +5052,7 @@ function attachNoteObservers() {
 function createChapterFromBlock(insertIdx){
   if(!blockDragInfo) return;
   const book = books[currentBookIdx];
-  const srcCh = book.chapters[currentChapIdx];
+  const srcCh = book.chapters[chapIdxSourceBloc()];
   if(!srcCh) return;
   const { sceneIdx, blockIdx } = blockDragInfo;
   const scene = srcCh.scenes && srcCh.scenes[sceneIdx];
@@ -4838,7 +5086,7 @@ function createChapterFromBlock(insertIdx){
 function dropBlockOnChapter(targetChapIdx){
   if(!blockDragInfo) return;
   const book=books[currentBookIdx];
-  const srcCh=book.chapters[currentChapIdx];
+  const srcCh=book.chapters[chapIdxSourceBloc()];
   const tgtCh=book.chapters[targetChapIdx];
   if(!srcCh||!tgtCh) return;
   migrateChapToScenes(tgtCh);
@@ -5244,6 +5492,7 @@ function readerUnlockBook() {
     confirmLabel: 'Déverrouiller', danger: false,
     onConfirm() {
       books[currentBookIdx].locked = false;
+      books[currentBookIdx].status = 'encours';
       saveBooks(); renderBooks();
       // Fermer le reader SANS retourner à la biblio (on override closeReader)
       document.getElementById('reader-overlay').classList.remove('open');
@@ -5404,7 +5653,7 @@ function buildChapHTML(ch, ci, showHeading) {
       (b.images||[]).forEach(img => {
         if (!img.data) return;
         html += `<figure class="reader-figure">`
-             +  `<img src="${img.data}" alt="${esc(img.caption||'')}" loading="lazy" />`
+             +  `<img src="${srcImage(img)}" alt="${esc(img.caption||'')}" loading="lazy" />`
              +  (img.caption ? `<figcaption>${esc(img.caption)}</figcaption>` : '')
              +  `</figure>`;
       });
@@ -5503,7 +5752,8 @@ async function handleImageFileSelected(input) {
    • IndexedDB : stockage des handles de fichiers et du dossier par défaut
 ════════════════════════════════════════════════════════════════════════ */
 
-const CLIO_VERSION = APP_CONFIG.version;
+/* Version de l'application : lue dans APP_CONFIG à chaque écriture, jamais
+   figée au chargement — AppInfo.json arrive après l'exécution de ce script. */
 const HAS_FSAPI = ('showSaveFilePicker' in window && 'showDirectoryPicker' in window);
 
 /* ── IndexedDB helpers ── */
@@ -5588,7 +5838,7 @@ async function setFileHandle(bookId, handle) {
 async function bookToClioBlob(book) {
   const zip = new JSZip();
   zip.file('manifest.json', JSON.stringify({
-    app: 'Clio', version: CLIO_VERSION,
+    app: 'Clio', version: APP_CONFIG.version,
     format: '2.0',
     created: book.createdAt, saved: new Date().toISOString()
   }, null, 2));
@@ -5617,10 +5867,16 @@ async function bookToClioBlob(book) {
         if (!block.images || !block.images.length) return;
         block.images = block.images.map(img => {
           if (!img.data || !img.data.startsWith('data:')) return img; // déjà extrait
+          // Une URL data: qui n'est pas une image en base64 (livre importé avant
+          // l'assainissement) ne s'affiche pas : elle n'entre pas non plus dans l'archive.
+          if (!DATA_IMAGE_SURE.test(img.data)) { const { data, ...imgRef } = img; return imgRef; }
           // Convertir data URL en binaire
           const base64 = img.data.split(',')[1];
-          const ext = img.mime ? img.mime.split('/')[1] : 'jpg';
-          const filename = `${img.id}.${ext}`;
+          // Nom de l'entrée : id et type sûrs seulement. Un livre piégé stocké
+          // avant l'assainissement garde un id comme « ../../x », qui sortirait
+          // de images/ dans l'archive écrite (zip slip chez qui la décompresse).
+          const ext = MIME_IMAGE_SUR.test(img.mime || '') ? img.mime.split('/')[1] : 'jpg';
+          const filename = `${ID_SUR.test(String(img.id)) ? img.id : uid()}.${ext}`;
           imgFolder.file(filename, base64, { base64: true });
           // Retourner la référence sans le data
           const { data, ...imgRef } = img;
@@ -5633,6 +5889,123 @@ async function bookToClioBlob(book) {
   });
 
   return await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
+}
+
+/* ── Assainir un livre importé ──
+   Un .clio vient de l'extérieur : il a pu être écrit à la main, ou piégé.
+   Sans CSP (tout le JS est en ligne), l'échappement au rendu est la seule
+   barrière ; on la double ici en ramenant chaque champ au type que décrit
+   FORMAT-CLIO.md. Rien n'est rejeté : un texte au mauvais type est vidé, un
+   identifiant inutilisable est remplacé, une image qui n'est pas une image
+   perd son contenu. Un fichier légitime traverse sans changement. */
+const ID_SUR          = /^[A-Za-z0-9_-]{1,100}$/;
+const MIME_IMAGE_SUR  = /^image\/[a-z0-9.+-]{1,50}$/i;
+// application/octet-stream : ce que donne FileReader quand le sélecteur (Android
+// surtout) ne fournit pas de type. Le contenu reste une image, on l'admet.
+const DATA_IMAGE_SURE = /^data:(image\/[a-z0-9.+-]{1,50}|application\/octet-stream);base64,[A-Za-z0-9+/=\s]*$/i;
+const nomImageSur = f => typeof f === 'string' && /^[^/\\]{1,200}$/.test(f) && f !== '.' && f !== '..';
+
+/* Attribut src d'une image de bloc : seule une URL data: d'image passe.
+   Test du préfixe seulement — le contenu pèse parfois plusieurs Mo et le
+   rendu est fréquent ; esc() garde l'attribut fermé quoi qu'il contienne.
+   Couvre aussi les livres importés avant cet assainissement. */
+const srcImage = img => (img && typeof img.data === 'string'
+  && /^data:(image\/[a-z0-9.+-]{1,50}|application\/octet-stream);base64,/i.test(img.data)) ? esc(img.data) : '';
+
+function assainirLivreImporte(book) {
+  const texte  = v => typeof v === 'string' ? v : (typeof v === 'number' ? String(v) : '');
+  const idSur  = v => ((typeof v === 'string' || typeof v === 'number') && ID_SUR.test(String(v))) ? v : uid();
+  const objet  = v => !!v && typeof v === 'object' && !Array.isArray(v);
+  const liste  = v => Array.isArray(v) ? v : [];
+  const textes = (o, cles) => cles.forEach(k => { if (o[k] !== undefined) o[k] = texte(o[k]); });
+
+  const image = img => {
+    if (!objet(img)) return null;
+    img.id = idSur(img.id);
+    textes(img, ['caption', 'name', 'mime', 'file']);
+    if (img.data !== undefined) {
+      if (typeof img.data === 'string' && DATA_IMAGE_SURE.test(img.data)) {
+        if (/^data:application\//i.test(img.data))   // type perdu : on le rétablit
+          img.data = `data:${MIME_IMAGE_SUR.test(img.mime || '') ? img.mime : 'image/jpeg'}` + img.data.slice(img.data.indexOf(';'));
+        img.mime = img.data.slice(5, img.data.indexOf(';'));   // le type réel du contenu
+      } else delete img.data;
+    }
+    if (img.mime && !MIME_IMAGE_SUR.test(img.mime)) delete img.mime;
+    // Référence morte conservée (FORMAT-CLIO §9.6), à condition d'être saine
+    return (img.data || nomImageSur(img.file)) ? img : null;
+  };
+  const bloc = b => {
+    b.id = idSur(b.id);
+    textes(b, ['title', 'text', 'note']);
+    if (b.accentIdx !== undefined) {
+      const n = parseInt(b.accentIdx, 10);
+      b.accentIdx = Number.isInteger(n) ? Math.min(ACCENTS.length - 1, Math.max(0, n)) : 0;
+    }
+    if (b.images !== undefined) b.images = liste(b.images).map(image).filter(Boolean);
+    return b;
+  };
+  const scene = sc => {
+    sc.id = idSur(sc.id);
+    textes(sc, ['title', 'note']);
+    sc.blocks = liste(sc.blocks).filter(objet).map(bloc);
+    return sc;
+  };
+  const entite = e => {
+    if (typeof e === 'string') return e;              // format hérité (§7.6)
+    if (!objet(e)) return null;
+    textes(e, ['name', 'note']);
+    if (e.open !== undefined) e.open = e.open === true;
+    return e;
+  };
+  const special = d => {
+    if (!objet(d)) return {};
+    if (d.entries !== undefined)        // glossaire et répertoire
+      d.entries = liste(d.entries).filter(objet)
+        .map(e => { textes(e, ['term', 'def', 'name', 'desc', 'type']); return e; });
+    if (d.indexEntries !== undefined)   // le rendu lit term[0] : un terme vide n'a pas sa place
+      d.indexEntries = liste(d.indexEntries).filter(objet)
+        .map(e => ({ ...e, term: texte(e.term), pages: liste(e.pages).filter(Number.isFinite) }))
+        .filter(e => e.term);
+    if (d.events !== undefined)
+      d.events = liste(d.events).filter(objet)
+        .map(e => { textes(e, ['date', 'title', 'desc']); return e; });
+    return d;
+  };
+
+  book.id = idSur(book.id);
+  textes(book, ['author', 'genre', 'desc', 'bookFormat', 'createdAt', 'updatedAt', 'clioFilename']);
+  book.title = texte(book.title) || 'Sans titre';
+  if (book.goal !== undefined) {
+    const g = Math.round(Number(book.goal));
+    book.goal = g > 0 ? g : 80000;
+  }
+  if (book.locked !== undefined) book.locked = book.locked === true;
+  // Statut (FORMAT-CLIO §7.1) : liste fermée, et le verrou fait foi.
+  if (!['brouillon', 'encours', 'termine'].includes(book.status)) delete book.status;
+  if (book.locked) book.status = 'termine';
+  else if (book.status === 'termine') book.status = 'encours';
+  ['characters', 'places'].forEach(k => {
+    if (book[k] !== undefined) book[k] = liste(book[k]).map(entite).filter(e => e !== null);
+  });
+  book.chapters = liste(book.chapters).filter(objet).map(ch => {
+    ch.id = idSur(ch.id);
+    textes(ch, ['title', 'notes', 'sectionType']);
+    if (ch.scenes !== undefined) ch.scenes = liste(ch.scenes).filter(objet).map(scene);
+    if (ch.specialData !== undefined) ch.specialData = special(ch.specialData);
+    return ch;
+  });
+  // Invariants (FORMAT-CLIO §9.7) : ≥ 1 chapitre, ≥ 1 scène, ≥ 1 bloc. Clio
+  // les tient lui-même ; mais une archive sans chapitre faisait planter
+  // l'ouverture du livre (loadChap(0) sur un chapitre absent).
+  const blocVierge = () => ({ id: uid(), title: '', text: '', accentIdx: 0 });
+  if (!book.chapters.length)
+    book.chapters.push({ id: uid(), title: 'Chapitre 1', sectionType: 'chapter', notes: '', scenes: [] });
+  book.chapters.forEach(ch => {
+    if (!Array.isArray(ch.scenes) || !ch.scenes.length)
+      ch.scenes = [{ id: uid(), title: '', note: '', blocks: [] }];
+    ch.scenes.forEach(sc => { if (!sc.blocks.length) sc.blocks.push(blocVierge()); });
+  });
+  return book;
 }
 
 /* ── Désérialiser .clio → livre ── */
@@ -5656,22 +6029,29 @@ async function clioToBook(blob) {
     // Recharger les images depuis /images/
     for (const sc of (ch.scenes||[])) {
       for (const block of (sc.blocks||[])) {
-        if (!block.images || !block.images.length) continue;
+        if (!Array.isArray(block.images) || !block.images.length) continue;
         block.images = await Promise.all(block.images.map(async img => {
+          if (!img || typeof img !== 'object') return img;   // écarté par l'assainissement
           if (img.data) return img; // déjà en base64 (ancien format)
-          if (!img.file) return img;
+          // Nom simple uniquement : images/ est plat (FORMAT-CLIO §4.2)
+          if (!nomImageSur(img.file)) return img;
           const imgFile = zip.files[`images/${img.file}`];
           if (!imgFile) return img;
           const base64 = await imgFile.async('base64');
           const ext = img.file.split('.').pop();
-          const mime = img.mime || `image/${ext}`;
-          return { ...img, data: `data:${mime};base64,${base64}` };
+          // Le type vient du fichier : il n'entre dans l'URL data: que s'il
+          // désigne bien une image, sinon on retombe sur l'extension.
+          const mime = MIME_IMAGE_SUR.test(img.mime || '') ? img.mime
+                     : MIME_IMAGE_SUR.test(`image/${ext}`) ? `image/${ext}` : 'image/jpeg';
+          // En mémoire, data remplace file (FORMAT-CLIO §7.5 : ils s'excluent)
+          const { file, ...imgSansFichier } = img;
+          return { ...imgSansFichier, data: `data:${mime};base64,${base64}` };
         }));
       }
     }
     chapters.push(ch);
   }
-  return { ...bookMeta, chapters };
+  return assainirLivreImporte({ ...bookMeta, chapters });
 }
 
 /* ── Écrire un blob dans un FileHandle ── */
@@ -5711,8 +6091,14 @@ function extensionClio() {
 }
 
 /* Nom d'affichage : on masque le suffixe technique ajouté pour Android. */
+/* Sous Android, le sélecteur rend un identifiant de document encodé
+   (« primary%3ADocuments%2F01_Ecriture%2FLivre.clio ») : on n'en montre que
+   le nom du fichier, décodé. */
 function nomClioLisible(nom) {
-  return String(nom || '').replace(/\.clio\.zip$/i, '.clio');
+  let n = String(nom || '');
+  try { n = decodeURIComponent(n); } catch (_) {}
+  n = n.split(/[\/:]/).pop() || n;
+  return n.replace(/\.clio\.zip$/i, '.clio');
 }
 
 async function firstSaveBook(bookIdx) {
@@ -5967,6 +6353,9 @@ async function handleClioFileOpen(input) {
 
 async function importClioFile(file, fileHandle) {
   try {
+    // Ouverture au démarrage (launchQueue, Android, macOS) : attendre la
+    // bibliothèque, sans quoi un livre déjà présent passerait pour nouveau.
+    await LIVRES_PRETS;
     const book = await clioToBook(file);
     book.clioFilename = file.name;
     book.clioStatus   = fileHandle ? 'linked' : 'downloaded';
@@ -6608,11 +6997,11 @@ function buildPDFHtml(book, chapters, opts) {
       if (opts.inclBlockTitles) {
         blocks.forEach(b => {
           if (b.title?.trim()) body += `<h4>${esc(b.title.trim())}</h4>`;
-          if ((b.images||[]).length) b.images.forEach(img => { if(img.data) body += `<figure><img src="${img.data}" />${img.caption?`<figcaption>${esc(img.caption)}</figcaption>`:''}</figure>`; });
+          if ((b.images||[]).length) b.images.forEach(img => { if(img.data) body += `<figure><img src="${srcImage(img)}" />${img.caption?`<figcaption>${esc(img.caption)}</figcaption>`:''}</figure>`; });
           b.text?.trim().split(/\n+/).forEach(p => { if(p.trim()) body += `<p>${esc(p.trim())}</p>`; });
         });
       } else {
-        blocks.forEach(b => { (b.images||[]).forEach(img => { if(img.data) body += `<figure><img src="${img.data}" /></figure>`; }); });
+        blocks.forEach(b => { (b.images||[]).forEach(img => { if(img.data) body += `<figure><img src="${srcImage(img)}" /></figure>`; }); });
         const joined = stripMentionSigils(blocks.reduce((acc,b)=>joinBlockTexts(acc,b.text||''),''), books[currentBookIdx]);
         joined.trim().split(/\n+/).forEach(p => { if(p.trim()) body += `<p>${esc(p.trim())}</p>`; });
       }
@@ -6667,7 +7056,8 @@ function printPDF(book, chapters, opts) {
    ouvrir Clio depuis file://, depuis localhost ou depuis une adresse https,
    ce sont trois espaces étanches. Ce fichier est le seul pont entre eux.
 
-   Volontairement exclus : 'clio-books' et 'clio-trash'. Ce sont des œuvres,
+   Volontairement exclus : les livres et la corbeille (IndexedDB 'clio-livres'
+   depuis 1.0.2, autrefois 'clio-books' et 'clio-trash'). Ce sont des œuvres,
    pas des préférences ; elles s'emportent par leurs fichiers .clio, et les
    mélanger ferait courir le risque d'écraser une bibliothèque par mégarde.
    ═══════════════════════════════════════════════════════════════════════ */
@@ -6693,7 +7083,7 @@ function buildSettingsExport() {
   return {
     app: 'Clio',
     type: 'settings',
-    version: CLIO_VERSION,
+    version: APP_CONFIG.version,
     exported: new Date().toISOString(),
     origine: location.origin + location.pathname,
     reglages,
@@ -7049,7 +7439,7 @@ function buildHTML(book, chapters, opts){
         blocksText.forEach(b=>{
           if(b.title && b.title.trim()) html += `<h4>${esc(b.title.trim())}</h4>\n`;
           if((b.images||[]).length) b.images.forEach(img=>{
-            if(img.data) html+=`<figure><img src="${img.data}" alt="${esc(img.caption||'')}" style="max-width:100%;"/>${img.caption?`<figcaption>${esc(img.caption)}</figcaption>`:''}</figure>\n`;
+            if(img.data) html+=`<figure><img src="${srcImage(img)}" alt="${esc(img.caption||'')}" style="max-width:100%;"/>${img.caption?`<figcaption>${esc(img.caption)}</figcaption>`:''}</figure>\n`;
           });
           const bt = stripMentionSigils(b.text||'', books[currentBookIdx]);
           if(bt.trim()){ bt.trim().split(/\n+/).forEach(p=>{ if(p.trim()) html+=`<p>${esc(p.trim())}</p>\n`; }); }
@@ -7057,7 +7447,7 @@ function buildHTML(book, chapters, opts){
       } else {
         blocksText.forEach(b=>{
           if((b.images||[]).length) b.images.forEach(img=>{
-            if(img.data) html+=`<figure><img src="${img.data}" alt="${esc(img.caption||'')}" style="max-width:100%;"/>${img.caption?`<figcaption>${esc(img.caption)}</figcaption>`:''}</figure>\n`;
+            if(img.data) html+=`<figure><img src="${srcImage(img)}" alt="${esc(img.caption||'')}" style="max-width:100%;"/>${img.caption?`<figcaption>${esc(img.caption)}</figcaption>`:''}</figure>\n`;
           });
         });
         const joined = stripMentionSigils(blocksText.reduce((acc,b)=>joinBlockTexts(acc,b.text||''),''), books[currentBookIdx]);
@@ -7108,7 +7498,12 @@ function lienContact() {
 function openAbout(){
   const c = APP_CONFIG;
   document.getElementById('about-logo').textContent    = '✒ ' + c.nom;
-  document.getElementById('about-version').textContent = 'Version ' + c.version + ' — ' + c.date;
+  // Date de la version telle que le journal d'AppInfo.json la donne (AAAA-MM-JJ).
+  const dateVersion = /^\d{4}-\d{2}-\d{2}$/.test(c.date)
+    ? new Date(c.date + 'T12:00:00').toLocaleDateString('fr-FR', { day:'numeric', month:'long', year:'numeric' })
+    : c.date;
+  document.getElementById('about-version').textContent =
+    'Version ' + (c.version || '—') + (dateVersion ? ' — ' + dateVersion : '');
   document.getElementById('about-tagline').textContent = c.slogan;
   document.getElementById('about-desc').textContent    = c.description;
 
@@ -7120,14 +7515,15 @@ function openAbout(){
     { label: 'Licence',       value: c.licence },
     { label: 'Langue',        value: c.langue },
     { label: 'Site web',      value: c.siteWeb,     link: c.siteWeb },
-    { label: 'Contact',       value: c.mailContact, link: lienContact() },
+    // Sans AppInfo.json (file://), pas d'adresse : pas de mailto: sans destinataire.
+    { label: 'Contact',       value: c.mailContact, link: c.mailContact && lienContact() },
     // Seul diagnostic conservé : savoir, depuis l'appareil, quelle version
     // tourne réellement. Les relevés sur le sélecteur de fichiers décrivaient
     // l'input HTML, abandonné au profit des greffons Tauri.
     { label: 'Build',         value: c.build || '—' },
   ];
   const contact = document.getElementById('about-contact-link');
-  if (contact) contact.href = lienContact();
+  if (contact) contact.href = c.mailContact ? lienContact() : '#';
 
   const grid = document.getElementById('about-grid');
   grid.innerHTML = fields.map(f => `
@@ -7136,8 +7532,8 @@ function openAbout(){
       <span class="about-field-value">${f.link ? `<a href="${f.link}" target="_blank">${esc(f.value)}</a>` : esc(f.value||'—')}</span>
     </div>`).join('');
 
-  document.getElementById('about-footer').innerHTML =
-    `© ${c.date} ${esc(c.entreprise)} — Tous droits réservés`;
+  document.getElementById('about-footer').textContent =
+    c.copyright || `© ${c.entreprise}`;
 
   document.getElementById('about-overlay').classList.add('open');
 }
@@ -7150,12 +7546,25 @@ let trashFilter = 'all';
 const TRASH_TYPE_LABELS = { book:'Livre', chapter:'Chapitre', scene:'Scène', block:'Bloc', character:'Personnage', place:'Lieu' };
 const TRASH_TYPE_ICONS  = { book:'📚', chapter:'📄', scene:'🎬', block:'⬜', character:'🧑', place:'📍' };
 
-function loadTrash(){
-  try { trash = JSON.parse(localStorage.getItem('clio-trash')||'[]'); } catch(e){ trash=[]; }
+/* Même stockage que les livres (IndexedDB 'clio-livres', repli localStorage) :
+   la corbeille garde des livres entiers, images comprises. */
+let _corbeilleIllisible = null;   // lecture ratée : ne pas écraser la corbeille stockée
+async function loadTrash(){
+  let brut, stockes = [];
+  // Lecture ratée (et non texte illisible) : la corbeille stockée existe peut-être
+  // encore. L'écrire maintenant la remplacerait par une liste vide — et un livre
+  // mis à la corbeille ensuite n'aurait plus de copie nulle part.
+  try { brut = await lireDonneesLivres('clio-trash'); }
+  catch(e){ _corbeilleIllisible = e; console.warn('Clio : corbeille illisible —', e); }
+  try { stockes = JSON.parse(brut || '[]'); } catch(e){ stockes = []; }
+  if (!Array.isArray(stockes)) stockes = [];
+  // Éléments jetés pendant le chargement : gardés en tête.
+  trash = trash.filter(t => !stockes.some(s => s.id === t.id)).concat(stockes);
 }
-function saveTrash(){
-  localStorage.setItem('clio-trash', JSON.stringify(trash));
-}
+const saveTrash = creerEcrivain('clio-trash', () => {
+  if (_corbeilleIllisible) throw _corbeilleIllisible;
+  return JSON.stringify(trash);
+}, () => {}, signalerEchecSauvegarde);
 function trashAdd(item){
   // item = { type, name, data, meta, bookId? }
   item.id = uid();
@@ -8124,7 +8533,7 @@ function renderIndex(ch, container) {
     group.innerHTML = `<div class="index-letter">${letter}</div>`;
     byLetter[letter].forEach(entry => {
       const row = document.createElement('div'); row.className = 'index-entry';
-      row.innerHTML = `<span class="index-entry-term">${esc(entry.term)}</span><span class="index-entry-pages">${entry.pages.join(', ')}</span>`;
+      row.innerHTML = `<span class="index-entry-term">${esc(entry.term)}</span><span class="index-entry-pages">${esc((Array.isArray(entry.pages)?entry.pages:[]).join(', '))}</span>`;
       group.appendChild(row);
     });
     grid.appendChild(group);
@@ -8592,9 +9001,27 @@ function initResizers() {
   });
 }
 
-loadBooks();
-loadTrash();
-updateTrashBadge();
+// Chargement asynchrone : la page s'affiche aussitôt, la bibliothèque suit de
+// quelques millisecondes. LIVRES_PRETS libère ensuite les sauvegardes en attente.
+(async () => {
+  try {
+    await ouvrirStockageLivres();
+    await loadBooks();
+    await loadTrash();
+    updateTrashBadge();
+  } catch (e) {
+    // Démarrage incomplet : mieux vaut ne rien écrire que d'écraser la base.
+    _ecritureBloquee = _ecritureBloquee || e;
+    console.error('Clio : chargement de la bibliothèque —', e);
+  } finally {
+    _livresPretsResoudre();
+  }
+})();
+// Mise en arrière-plan (Android peut alors tuer l'application sans prévenir) :
+// les livres sont écrits sans attendre la fin du délai de scheduleSave().
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden && scheduleSave._enAttente) saveBooks();
+});
 setTimeout(initResizers, 0);
 setTimeout(initNoteColResizer, 0);
 setTimeout(applySettingsOnLoad, 0);
@@ -8602,20 +9029,23 @@ setTimeout(applySettingsOnLoad, 0);
 /* ═══════════════════ DURABILITÉ DU STOCKAGE ═══════════════════
    Par défaut le navigateur classe les données d'un site comme « best effort » :
    il a le droit de les effacer quand l'espace disque se réduit. Or c'est là que
-   vivent les livres (clio-books), les réglages (clio-settings, dont le thème et
+   vivent les livres (IndexedDB 'clio-livres'), les réglages (clio-settings, dont le thème et
    le partage texte/notes) et les liens vers les fichiers .clio (IndexedDB).
 
    persist() demande à faire passer l'origine en « persistent » : plus d'éviction
    automatique. Chrome l'accorde sans rien demander à l'utilisateur dès que le
    site est installé comme application ou suffisamment utilisé — d'où l'intérêt
    d'installer Clio plutôt que de l'ouvrir en simple page.
+   Depuis 1.0.2 les livres et la corbeille sont dans IndexedDB ('clio-livres') :
+   même origine, donc même protection. La demande ne bloque jamais le démarrage.
    ═════════════════════════════════════════════════════════════ */
 /* ═══════════ RÉCEPTION D'UN FICHIER DEPUIS ANDROID ═══════════
    Android n'autorise aucune application à enrichir la table système des types
    MIME : .clio y restera toujours inconnue, d'où le fichier grisé dans les
    sélecteurs. Mais Clio peut se déclarer capable d'OUVRIR un contenu — il
-   apparaît alors dans « Ouvrir avec » et parmi les cibles de partage, ce qui
-   contourne le sélecteur au lieu de se battre contre lui.
+   apparaît alors dans « Ouvrir avec », ce qui contourne le sélecteur au lieu de
+   se battre contre lui. (Pas de cible « Partager » pour l'instant : le filtre
+   SEND est retiré du manifeste tant que cette réception n'est pas portée.)
 
    Le greffon natif lit le contenu et le remet ici en base64 ; on rejoint
    ensuite le chemin d'import habituel, manifeste vérifié compris.
@@ -8676,17 +9106,21 @@ function renderAppFooter() {
   const el = document.getElementById('app-footer');
   if (!el) return;
   const c = APP_CONFIG, sep = '<span class="sep">·</span>';
+  // Année du copyright d'AppInfo.json ; à défaut, celle de la version.
+  const annee = ((c.copyright || '').match(/\d{4}/) || (c.date || '').match(/^\d{4}/) || [''])[0];
   el.innerHTML = [
     `<b>${esc(c.nom)}</b> ${esc(c.version)}`,
-    sep, esc(c.entreprise),
-    sep, esc(c.programmeur),
+    c.entreprise ? sep + esc(c.entreprise) : '',
+    c.programmeur ? sep + esc(c.programmeur) : '',
     `<span class="grow"></span>`,
     c.mailContact ? `<a href="mailto:${esc(c.mailContact)}">${esc(c.mailContact)}</a>` : '',
     c.siteWeb ? sep + `<a href="${esc(c.siteWeb)}" target="_blank" rel="noopener">${esc(c.siteWeb.replace(/^https?:\/\//,''))}</a>` : '',
-    sep, `© ${esc(c.date)}`,
+    annee ? sep + `© ${esc(annee)}` : '',
   ].filter(Boolean).join(' ');
 }
+// Premier rendu immédiat avec le repli, second une fois AppInfo.json lu.
 setTimeout(renderAppFooter, 0);
+APP_INFO_CHARGEE.then(renderAppFooter);
 
 async function ensurePersistentStorage() {
   if (!navigator.storage || !navigator.storage.persist) return null;
@@ -8722,6 +9156,118 @@ if ('launchQueue' in window && 'files' in LaunchParams.prototype) {
 }
 setTimeout(updateWritingUI, 100); // ← badge écriture suivie
 
+
+// Le menu de statut d'une carte se referme dès qu'on touche ailleurs.
+document.addEventListener('click', e => {
+  if (!e.target.closest('.book-card-statut-wrap'))
+    document.querySelectorAll('.book-card-statut-menu.open').forEach(m => m.classList.remove('open'));
+});
+
+// ── Glisser-déposer au doigt ─────────────────────────────────
+/* Blocs, scènes, notes et chapitres se déplacent par le glisser-déposer
+   HTML5, armé au mousedown sur leur poignée. Au doigt, ni ce mousedown ni le
+   glisser HTML5 n'ont lieu dans les WebView mobiles (Android en tête) : les
+   poignées restaient inertes.
+
+   Plutôt que de doubler chaque logique de déplacement, cette passerelle
+   rejoue au doigt la séquence que produirait la souris — dragstart sur la
+   source, dragenter/dragover/dragleave sous le doigt, drop puis dragend —
+   avec de vrais DragEvent. Les gestionnaires existants s'exécutent donc tels
+   quels. À la souris, rien ne change : seuls les pointeurs tactiles et les
+   stylets passent par ici. */
+(function glisserAuDoigt(){
+  const POIGNEES = '.block-gutter-btn.grab, .scene-drag-handle, .drag-handle, .block-note-label';
+  const SOURCES  = '.block-card, .block-note-cell, .scene-container, .chapter-item';
+  let geste = null;
+
+  const lancer = (type, cible, x, y, liee) => {
+    if (!cible) return true;
+    const ev = new DragEvent(type, {
+      bubbles: true, cancelable: true, composed: true,
+      clientX: x, clientY: y, dataTransfer: geste.dt, relatedTarget: liee || null,
+    });
+    return cible.dispatchEvent(ev);
+  };
+
+  // Défilement automatique quand le doigt approche du bord d'une zone qui
+  // défile : sans lui, impossible d'emmener un bloc hors de l'écran.
+  const defiler = () => {
+    if (!geste) return;
+    const { x, y } = geste;
+    let el = document.elementFromPoint(x, y);
+    while (el && el !== document.body) {
+      const s = getComputedStyle(el);
+      if (/(auto|scroll)/.test(s.overflowY) && el.scrollHeight > el.clientHeight) {
+        const r = el.getBoundingClientRect(), marge = 48;
+        if (y < r.top + marge)         el.scrollTop -= 12;
+        else if (y > r.bottom - marge) el.scrollTop += 12;
+        break;
+      }
+      el = el.parentElement;
+    }
+    geste.defil = requestAnimationFrame(defiler);
+  };
+
+  const terminer = (annule) => {
+    if (!geste) return;
+    const g = geste;
+    cancelAnimationFrame(g.defil);
+    g.fantome?.remove();
+    if (!annule && g.sous) lancer('drop', g.sous, g.x, g.y);
+    lancer('dragend', g.source, g.x, g.y);
+    geste = null;
+  };
+
+  document.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse' || geste) return;
+    const poignee = e.target.closest(POIGNEES);
+    const source  = poignee?.closest(SOURCES);
+    if (!source || source.closest('.editor-locked')) return;
+    e.preventDefault();
+
+    geste = { source, x: e.clientX, y: e.clientY, sous: null, dt: new DataTransfer() };
+    source.setAttribute('draggable', 'true');
+    // Un dragstart annulé (note vide, par exemple) refuse le déplacement.
+    if (!lancer('dragstart', source, e.clientX, e.clientY)) {
+      source.setAttribute('draggable', 'false');
+      geste = null;
+      return;
+    }
+    try { poignee.setPointerCapture(e.pointerId); } catch(_) {}
+
+    const r = source.getBoundingClientRect();
+    const f = source.cloneNode(true);
+    f.classList.remove('dragging');
+    f.classList.add('drag-fantome');
+    f.style.width = r.width + 'px';
+    f.style.left  = r.left + 'px';
+    f.style.top   = r.top + 'px';
+    geste.decalX = e.clientX - r.left;
+    geste.decalY = e.clientY - r.top;
+    geste.fantome = f;
+    document.body.appendChild(f);
+    geste.defil = requestAnimationFrame(defiler);
+  }, { passive: false });
+
+  document.addEventListener('pointermove', e => {
+    if (!geste) return;
+    e.preventDefault();
+    geste.x = e.clientX; geste.y = e.clientY;
+    geste.fantome.style.left = (e.clientX - geste.decalX) + 'px';
+    geste.fantome.style.top  = (e.clientY - geste.decalY) + 'px';
+
+    const sous = document.elementFromPoint(e.clientX, e.clientY);
+    if (sous !== geste.sous) {
+      lancer('dragleave', geste.sous, e.clientX, e.clientY, sous);
+      lancer('dragenter', sous, e.clientX, e.clientY, geste.sous);
+      geste.sous = sous;
+    }
+    lancer('dragover', sous, e.clientX, e.clientY);
+  }, { passive: false });
+
+  document.addEventListener('pointerup',     () => terminer(false));
+  document.addEventListener('pointercancel', () => terminer(true));
+})();
 
 // ── PWA : enregistrement du service worker ──────────────────
 /* Pas de service worker : Clio est distribué en fichier unique, et un

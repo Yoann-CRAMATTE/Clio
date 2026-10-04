@@ -12,7 +12,11 @@ set -euo pipefail
 cd "$(dirname "$0")"
 
 DEST="${1:-../web}/Clio"
-VERSION="$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' AppInfo.json | head -1)"
+# AppInfo.json vit dans src/ : la page le lit au démarrage, il part donc avec
+# elle dans le dossier produit. Le premier "version" est celui de l'application,
+# ceux du journal viennent après.
+VERSION="$(sed -n 's/.*"version": "\([^"]*\)".*/\1/p' src/AppInfo.json | head -1)"
+./sync-version.sh
 BUILD="$(sed -n 's/.*build: *"\([^"]*\)".*/\1/p' src/index.html | head -1)"
 
 rm -rf "$DEST"
@@ -23,7 +27,7 @@ cp -R src/. "$DEST/"
 # cache chez tous les utilisateurs, au lancement suivant. Sans cette
 # substitution, une mise à jour déposée pourrait rester invisible.
 if [[ -f "$DEST/service-worker.js" ]]; then
-  sed -i '' "s/__VERSION__/${VERSION}-${BUILD}/" "$DEST/service-worker.js"
+  perl -pi -e "s/__VERSION__/${VERSION}-${BUILD}/" "$DEST/service-worker.js"
 fi
 
 echo "Dossier web produit : $DEST"

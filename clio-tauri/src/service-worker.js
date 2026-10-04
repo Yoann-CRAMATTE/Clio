@@ -28,6 +28,10 @@ const CACHE = 'clio-' + VERSION;
 const ESSENTIEL = [
   './',
   './index.html',
+  './AppInfo.json',
+  './manifest.webmanifest',
+  './icons/icone-192.png',
+  './icons/icone-512.png',     // identité et version, lues par la page au démarrage
   './fonts.css',
   './vendor/jszip.min.js',
 ];
