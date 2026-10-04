@@ -116,7 +116,26 @@ qui vaut pour les projets suivants.
   plus de 10 Mo, à glisser à la main. Toute acceptation de conditions et toute
   publication demandent l'accord explicite du propriétaire.
 
-## 8. Organisation du travail
+## 8. Publication web (PWA)
+
+- **Manifeste en vrai fichier** (`manifest.webmanifest`, chemins relatifs) et vraies
+  icônes PNG 192 / 512 : un manifeste injecté en `data:` n'a pas d'adresse de base
+  et son installation n'est pas garantie.
+- **GitHub Pages par GitHub Actions** : tests, puis script de build, puis mise en
+  ligne à chaque `push` sur `main`. Scripts de build **portables macOS/Linux**
+  (`perl -pi` plutôt que `sed -i ''`).
+- Toutes les PWA d'un même compte GitHub partagent **la même origine**
+  (`<compte>.github.io`) : stockage, caches et service workers voisinent. Préfixer
+  chaque clé, base IndexedDB et cache par le nom de l'app, et ne supprimer que ses
+  propres caches à l'activation du service worker.
+- Le navigateur intégré à l'app Claude refuse les service workers : tester la PWA
+  dans un vrai Chrome.
+- Une app web en un seul fichier HTML est **lisible par tous** une fois en ligne :
+  rendre le dépôt public n'expose que l'historique et la « cuisine ». Protéger par
+  une licence explicite et un en-tête de copyright, pas par le secret. Auditer
+  l'historique (secrets, adresses, branches d'autres projets) avant de publier.
+
+## 9. Organisation du travail
 
 - **Branche de travail** avant toute série de modifications ; ne committer qu'une
   fois validé sur l'appareil.

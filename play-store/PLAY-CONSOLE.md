@@ -17,7 +17,7 @@ l'accord explicite de Yoann avant d'être validées.
 | Version | 1.0.2 — versionCode 1000002 |
 | E-mail de contact | `accueil@europasoft.eu` |
 | Site web | `https://www.europasoft.eu` |
-| Politique de confidentialité | `https://europasoft.eu/clio/confidentialite.html` (à mettre en ligne — voir § 6) |
+| Politique de confidentialité | `https://yoann-cramatte.github.io/Clio/confidentialite.html` (en ligne depuis le 2026-10-04) |
 
 ## 2. Fichiers
 
