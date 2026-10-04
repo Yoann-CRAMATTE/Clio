@@ -21,7 +21,16 @@ LIVRE ─┬─ CHAPITRE ─┬─ SCÈNE ─┬─ BLOC ─┬─ titre (option
 Le bloc est l'unité de pensée : il se déplace dans sa scène, vers une autre
 scène, vers un autre chapitre.
 
-EuropaSoft · Yoann CRAMATTE · usage privé
+EuropaSoft · Yoann CRAMATTE · © 2025-2026, tous droits réservés
+
+**Essayer Clio dans le navigateur :** https://yoann-cramatte.github.io/Clio/ —
+installable comme application (PWA) sur ordinateur, tablette et téléphone, et
+utilisable hors ligne. Sur Android, Clio existe aussi sur Google Play.
+
+> **Licence.** Ce dépôt est public pour consultation uniquement. Le code n'est
+> pas libre : toute copie, modification, redistribution ou réutilisation est
+> interdite sans autorisation écrite. Voir [`LICENSE`](LICENSE) ; composants
+> tiers dans [`NOTICES`](NOTICES).
 
 ---
 
@@ -31,6 +40,12 @@ Clio ne collecte aucune donnée. Les livres, les notes et les réglages restent
 sur l'appareil de l'auteur et dans les fichiers `.clio` qu'il enregistre
 lui-même. Rien n'est transmis. L'application fonctionne sans compte et sans
 connexion — c'est vérifiable : elle ne contient aucun appel réseau.
+
+Sur l'appareil, les livres et la corbeille sont enregistrés dans la base
+IndexedDB `clio-livres` du navigateur ou du WebView (depuis 1.0.2 ; avant,
+dans `localStorage`, dont le quota saturait vite). Les réglages restent dans
+`localStorage`. Le fichier `.clio` demeure la seule copie qui survive à
+l'effacement des données du navigateur.
 
 ---
 
@@ -67,10 +82,13 @@ clio-tauri/
 │   ├── index.html          l'application complète
 │   ├── fonts.css, fonts/   Playfair Display, Crimson Pro, IM Fell English
 │   ├── vendor/             JSZip
+│   ├── AppInfo.json        identité de l'application et journal des versions,
+│   │                       seule source de la version (lue par la page)
 │   └── service-worker.js   démarrage hors ligne de la version web
 ├── src-tauri/              empaquetage Tauri (Rust, manifeste Android)
 ├── docs/PLATEFORMES.md     contraintes par plateforme, pièges de compilation
-├── AppInfo.json            identité de l'application et journal des versions
+├── tests/                  tests automatisés (format .clio, stockage des livres)
+├── sync-version.sh         aligne package.json et Cargo.toml sur AppInfo.json
 ├── build-web.sh            produit le dossier web
 └── build-android.sh        produit l'APK
 
@@ -93,8 +111,12 @@ cd clio-tauri
 Le dossier `web/Clio/` (environ 1,4 Mo) se dépose tel quel sur n'importe quel
 hébergement statique. L'application répond alors sur `<votre-site>/Clio/`.
 
-Le manifeste s'adapte seul à l'emplacement : posé dans `/Clio/`, il y déclare
-son périmètre. Rien à configurer.
+Le manifeste (`manifest.webmanifest`) n'emploie que des chemins relatifs :
+posé dans `/Clio/`, il y déclare son périmètre. Rien à configurer.
+
+**GitHub Pages.** Chaque mise à jour de `main` déclenche
+`.github/workflows/pwa.yml` : tests, puis `build-web.sh`, puis mise en ligne
+sur https://yoann-cramatte.github.io/Clio/. Un test en échec bloque la publication.
 
 **Une adresse `https://` est nécessaire** à l'installation en application
 (PWA). En `http://` simple, Clio fonctionne mais ne s'installe pas — c'est une
@@ -119,6 +141,36 @@ Le script exporte lui-même les chemins du JDK, du SDK et du NDK, absents du
 `PATH` par défaut. Les pièges rencontrés — et les raisons de chaque réglage —
 sont consignés dans `docs/PLATEFORMES.md`. À lire avant toute modification de
 la configuration d'empaquetage.
+
+---
+
+## Lancer les tests
+
+```bash
+cd clio-tauri
+npm install   # une fois : installe aussi fake-indexeddb, seule dépendance des tests
+npm test
+```
+
+Les tests utilisent le lanceur intégré de Node (`node --test`, Node 18 ou
+plus). Ils ne recopient aucune logique : `tests/charger-index.mjs` découpe
+`src/index.html` entre des repères (commentaires de section, débuts de
+déclaration) et évalue ces extraits tels quels dans un bac à sable `node:vm`,
+avec le `vendor/jszip.min.js` livré. Si un repère disparaît, le chargement
+échoue au lieu de tester autre chose que l'application.
+
+- `format-clio.test.mjs` : aller-retour d'un livre riche (tous types de
+  section, scènes, blocs, notes, images, entités, caractères spéciaux) par
+  `bookToClioBlob` puis `clioToBook`, conformité de l'archive à
+  `FORMAT-CLIO.md`, et archives piégées (balisage dans les champs, chemins
+  `../`, images qui n'en sont pas, pollution de prototype).
+- `stockage-livres.test.mjs` : migration localStorage → IndexedDB, écritures
+  regroupées, repli localStorage, protections contre l'écrasement de la
+  bibliothèque. IndexedDB y est simulée par `fake-indexeddb` (pur JavaScript,
+  aucune dépendance).
+
+Ces tests valident la logique, pas les WebView : le comportement sur appareil
+reste à vérifier à la main.
 
 ---
 

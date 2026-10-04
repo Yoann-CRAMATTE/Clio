@@ -1,0 +1,54 @@
+# Publie la version web de Clio (PWA) sur GitHub Pages à chaque mise à jour
+# de main. La source reste clio-tauri/src, base commune avec les applications
+# Tauri : ce flux ne fait qu'exécuter build-web.sh, comme on le ferait à la main.
+name: PWA — GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Une seule publication à la fois ; la plus récente l'emporte.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  construire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      # Aucune version cassée ne part en ligne : les tests du format .clio et
+      # du stockage passent d'abord.
+      - name: Tests
+        working-directory: clio-tauri
+        run: |
+          npm install --no-audit --no-fund
+          npm test
+
+      - name: Dossier web
+        run: ./clio-tauri/build-web.sh "$RUNNER_TEMP/site"
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/site/Clio
+
+  publier:
+    needs: construire
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploiement.outputs.page_url }}
+    steps:
+      - id: deploiement
+        uses: actions/deploy-pages@v4

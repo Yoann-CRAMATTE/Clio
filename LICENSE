@@ -1,0 +1,75 @@
+LICENCE PROPRIÉTAIRE — CLIO
+Copyright © 2025-2026 EuropaSoft — Yoann CRAMATTE. Tous droits réservés.
+
+1. OBJET
+
+Le présent dépôt (code source, documentation, norme du format .clio, icônes,
+textes et autres éléments, ci-après « le Logiciel ») est la propriété exclusive
+d'EuropaSoft. Il est rendu public à seule fin de consultation et de
+transparence. Sa publication ne constitue ni une licence libre, ni une
+licence open source, ni une cession de droits.
+
+2. CE QUI EST PERMIS
+
+Toute personne peut :
+  a) consulter le code source du Logiciel sur la plateforme qui l'héberge ;
+  b) utiliser l'application Clio telle que distribuée par EuropaSoft (site
+     europasoft.eu, Google Play ou tout autre canal officiel), pour son usage
+     personnel ;
+  c) lire et écrire des fichiers au format .clio, y compris au moyen d'un
+     logiciel tiers développé indépendamment à partir de la norme publiée
+     dans FORMAT-CLIO.md, sans reprendre le code du Logiciel.
+
+3. CE QUI EST INTERDIT
+
+Sauf autorisation écrite préalable d'EuropaSoft, il est interdit de :
+  a) copier, reproduire ou télécharger le Logiciel en tout ou partie, hors
+     la consultation prévue au 2.a ;
+  b) modifier, adapter, traduire le Logiciel ou en créer des œuvres dérivées ;
+  c) distribuer, publier, héberger, louer, prêter, vendre ou sous-licencier
+     le Logiciel ou toute version modifiée ;
+  d) exécuter, déployer ou mettre à disposition le Logiciel à partir de ce
+     dépôt, notamment comme service en ligne, application ou PWA ;
+  e) intégrer tout ou partie du Logiciel dans un autre logiciel, produit ou
+     service, commercial ou non ;
+  f) utiliser le Logiciel, son code ou sa documentation pour entraîner,
+     évaluer ou affiner un système d'intelligence artificielle ;
+  g) retirer ou altérer les mentions de propriété, de copyright ou la
+     présente licence.
+
+4. PLATEFORME D'HÉBERGEMENT
+
+Les conditions d'utilisation de la plateforme qui héberge ce dépôt peuvent
+accorder à ses utilisateurs certains droits techniques limités (afficher le
+dépôt, en créer une copie sur la plateforme). Ces droits s'exercent dans les
+seules limites de ces conditions et n'emportent aucun des droits interdits à
+l'article 3.
+
+5. COMPOSANTS TIERS
+
+Les composants tiers inclus dans le dépôt restent soumis à leur propre
+licence, rappelée dans le fichier NOTICES. La présente licence ne s'y
+applique pas.
+
+6. ABSENCE DE GARANTIE
+
+Le Logiciel est fourni « en l'état », sans garantie d'aucune sorte. EuropaSoft
+ne saurait être tenue responsable d'un dommage résultant de son utilisation,
+dans les limites prévues par la loi.
+
+7. DROIT APPLICABLE
+
+La présente licence est régie par le droit français. Tout litige relève des
+tribunaux compétents du ressort du siège d'EuropaSoft.
+
+8. CONTACT
+
+Pour toute demande d'autorisation : accueil@europasoft.eu — www.europasoft.eu
+
+---------------------------------------------------------------------------
+English summary (for information only — the French text above prevails):
+All rights reserved. This repository is public for viewing only. You may not
+copy, modify, distribute, deploy, run from source, create derivative works
+from, or use this code or documentation to train AI systems without prior
+written permission from EuropaSoft. Third-party components keep their own
+licences (see NOTICES).

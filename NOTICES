@@ -1,0 +1,24 @@
+COMPOSANTS TIERS INCLUS DANS CLIO
+
+Ces composants ne sont pas couverts par la licence propriétaire de Clio
+(fichier LICENSE). Chacun reste soumis à sa propre licence.
+
+---------------------------------------------------------------------------
+JSZip 3.10.1 — clio-tauri/src/vendor/jszip.min.js
+  © Stuart Knightley, David Duponchel, Franz Buchinger, António Afonso
+  Double licence MIT ou GPLv3 ; Clio l'utilise sous licence MIT.
+  https://github.com/Stuk/jszip
+
+---------------------------------------------------------------------------
+Polices — clio-tauri/src/fonts/
+  Playfair Display — © The Playfair Display Project Authors (Claus Eggers Sørensen)
+  Crimson Pro      — © The Crimson Pro Project Authors (Jacques Le Bailly)
+  IM Fell English  — © Igino Marini
+  Toutes sous SIL Open Font License 1.1 : https://openfontlicense.org
+  Les polices peuvent être utilisées, étudiées, modifiées et redistribuées
+  selon les termes de l'OFL ; elles ne peuvent pas être vendues seules.
+
+---------------------------------------------------------------------------
+Dépendances de compilation (Tauri, greffons Tauri, crates Rust, paquets npm)
+  Listées dans clio-tauri/src-tauri/Cargo.lock et clio-tauri/package.json.
+  Principalement sous licences MIT et/ou Apache-2.0, selon chaque projet.
